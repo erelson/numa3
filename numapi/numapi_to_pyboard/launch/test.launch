@@ -1,0 +1,3 @@
+<launch>
+    <node name="cmd_vel_relay" pkg="numapi_to_pyboard" type="cmd_vel_relay.py" output="screen" />
+</launch>

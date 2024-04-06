@@ -1,0 +1,26 @@
+<?xml version="1.0.0"?>
+    <package>
+    <name>numapi_to_pyboard</name>
+    <version>0.0.1</version>
+    <description>Communication between raspberry pi and pyboard for Numa3</description>
+    <maintainer email="gertlex@gmail.com">t</maintainer>
+
+    <license>TBD</license>
+
+    <url type="website">https://www.github.com/erelson</url>
+
+    <author email="gertlex@gmail.com">Eric Relson</author>
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>rospy</build_depend>
+    <build_depend>geometry_msgs</build_depend>
+    <build_depend>std_msgs</build_depend>
+    
+    <run_depend>rospy</run_depend>
+    <run_depend>rosserial_python</run_depend>
+    <run_depend>geometry_msgs</run_depend>
+    <run_depend>std_msgs</run_depend>
+    <export>
+    </export>
+</package>
