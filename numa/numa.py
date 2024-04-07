@@ -707,6 +707,8 @@ class NumaMain(object):
                     else:
                         self.walkV = max(self.crx.walkv, -80)
                     self.curve_dir = -1
+                # TODO (4-7-2024) See if I need this in refamiliarization testing
+                print("ZZZ", turnH, self.walkV, self.walkH, self.curve_dir)
             else: # Do nothing
                 self.turnright = False
                 self.turnleft = False
@@ -740,7 +742,7 @@ class NumaMain(object):
 
         # Look joystick is right joystick
         if self.slowturret:
-            pan_add = int(-self.crx.lookh / 40)#17) # 17 is old value from Numa1
+            pan_add = int(-self.crx.lookh / 40)
         else:
             pan_add = int(-self.crx.lookh / 10)
         tilt_add = int(-self.crx.lookv / 25)
@@ -791,7 +793,7 @@ class NumaMain(object):
         elif adcval_loaded < self.MIN_ADC_NO_BB and self.loader_timeout_mode != "rewind":  # Only check this in forward dir
             self.bb_detect_adc_loopcnt += 1
             print("adcval_loaded detected BB; adcval:", adcval_loaded, self.bb_detect_adc_loopcnt)
-            if self.bb_detect_adc_loopcnt > 10: # ~200 ms
+            if self.bb_detect_adc_loopcnt > 10:  # ~200 ms
                 print("entering timeout (bb detected)")
                 self.ammoMotor.direct_set_speed(LOADER_SPEED_OFF)
                 self.loader_timeout_mode = "timeout"
