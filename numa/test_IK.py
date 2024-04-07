@@ -261,7 +261,7 @@ class TestWalkCode(unittest.TestCase):
         # numa.get_now(ms = 0)
         n1, n2, n3, n4 = loopLen/2, 0, loopLen/2, 0  # From plots # TODO what part of the gait is this?
         ang_dir = 0  # forward
-        g.walk_code(loopLen, loopLen/2, travRate, 2*travRate, n1, n2, n3, n4, ang_dir)
+        g.walk_code(loopLen, loopLen/2, travRate, n1, n2, n3, n4, ang_dir)
 
         self.assertAlmostEqual(0, g.footH13)
         self.assertAlmostEqual(0, g.footH24)
@@ -285,7 +285,7 @@ class TestWalkCode(unittest.TestCase):
 #        g.sqL34 = 2.
 #
 #        n1, n2, n3, n4 = 1
-#        a2, a3, _ = g.walk_code(loopLen, loopLen/2, travRate, 2*travRate, n1, n2, n3, n4)
+#        a2, a3, _ = g.walk_code(loopLen, loopLen/2, travRate, n1, n2, n3, n4)
 #
 #        self.assertAlmostEqual(0, g.footH13)
 #        self.assertAlmostEqual(0, g.footH24)

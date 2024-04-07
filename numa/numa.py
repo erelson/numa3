@@ -178,7 +178,6 @@ class NumaMain(object):
         # Defaults?
         trav_rate_default = 25 # distance covered by a stride is twice this
         self.travRate = trav_rate_default
-        self.double_travRate = 2 * self.travRate
 
         # Various?
         self.turnTimeOffset = 0
@@ -470,7 +469,6 @@ class NumaMain(object):
         self.half_loopLength = self.loopLength / 2
         # These don't change currently...
         #self.travRate = 30 - 10 # this was redundant
-        #self.double_travRate = 2 * self.travRate
 
         #//////////////////////////
         # -------- Start Leg stuff-------
@@ -486,7 +484,7 @@ class NumaMain(object):
         #if 0:  #Disables walking
         if self.walk == True and self.turn_loops == 0:
             self.gaits.walk_code(self.loopLength, self.half_loopLength,
-                                self.travRate, self.double_travRate,
+                                self.travRate,
                                 now1, now2, now3, now4, self.ang_dir,
                                 self.curve_dir)
 

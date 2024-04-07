@@ -205,11 +205,13 @@ class Gaits():
         return
 
 
-    def walk_code(self, loopLength, half_loopLength, travRate, double_travRate, now1, now2, now3, now4, ang_dir, curve_dir=0):
+    def walk_code(self, loopLength, half_loopLength, travRate, now1, now2, now3, now4, ang_dir, curve_dir=0):
         # OPT: self added for jupyter
         # Get height of each pair of feet
         self.footH13 = calc_foot_h(now2, FH, ALL_FEET_DOWN_TIME_FRAC, half_loopLength, TRANSITION_FRAC, FH_FRAC)
         self.footH24 = calc_foot_h(now3, FH, ALL_FEET_DOWN_TIME_FRAC, half_loopLength, TRANSITION_FRAC, FH_FRAC)
+
+        double_travRate = 2 * travRate
 
         # Now change the now variables so that they track a triangle wave instead of a sawtooth wave
         if now2 >= half_loopLength:                # Goes from 0ms...5000ms
