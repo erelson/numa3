@@ -66,8 +66,8 @@ ALL_FEET_DOWN_TIME_FRAC_TURNING = 0.12 # (one half of fraction of time both feet
 TRANSITION_FRAC = ALL_FEET_DOWN_TIME_FRAC + 0.28
 TRANSITION_FRAC_TURNING = ALL_FEET_DOWN_TIME_FRAC_TURNING + 0.28
 
-# Leg numbering:  (4-3-2024: confirm this)
-#      4\     ^     /1
+# Leg numbering:
+#      4\     ^     /3
 #        \    |    /  
 #         \ _____ /   
 #          |     |    
@@ -75,7 +75,7 @@ TRANSITION_FRAC_TURNING = ALL_FEET_DOWN_TIME_FRAC_TURNING + 0.28
 #          |_____|    
 #         /       \   
 #        /         \  
-#      3/           \2
+#      1/           \2
 
 #  a: walk vector (from controller)
 #  a: default leg position (fixed)
@@ -115,11 +115,12 @@ TRANSITION_FRAC_TURNING = ALL_FEET_DOWN_TIME_FRAC_TURNING + 0.28
 #      |5         ___ground___             __|            
 #
 #
-#      |___________legLen________|
+#      |_____legLen_aka L0_______|
 
 # Leg constants for Numa1
-#defaultbodyH = 150 #130 + 20 # mm  # Numa
-defaultbodyH = 88 # Numa2
+# Other values are in poses.gen_numa2_legs
+#defaultbodyH = 150  # mm; Numa
+defaultbodyH = 88  # mm; Numa2
 
 #defaultL0 = 105 + 5 # mm - pretty close to actual...
 #defaultL12 = 58
@@ -354,10 +355,13 @@ class Gaits():
 
         # Turning (see turn_code())
         if cos_s1Ang is None and sin_s1Ang is None:
-            legLen = 1.00 * self.L0  # Once scaled this value when turning.
+            legLen = 1.00 * self.L0  # Approximation; At one point we varied/scaled this value when turning.
+                                     # It would be more accurate if the feet moved in a circle about the
+                                     # robot's center of mass.
         else:
             # Top down x-y plane; lenx and leny form the vector of the leg, from which we get length
             # Note: cos_s1Ang and sin_s1Ang do not change.
+            #   OR do they? depends on coordinate frame of vectors we're working with
             # Yes, trav_sdir goes to lenx and etc. (per measuring angle from 0 deg == forward, CCW)
             lenx = self.L0 * cos_s1Ang + trav_sdir
             leny = self.L0 * sin_s1Ang + trav_cdir

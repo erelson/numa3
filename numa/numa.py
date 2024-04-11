@@ -62,12 +62,12 @@ THE_TURN_SPEED = 7
 # bitmasks for buttons array
 BUT_R1 = 0x01 # center pan
 BUT_R2 = 0x02 # center pan and tilt
-BUT_R3 = 0x04 # crouch
+BUT_R3 = 0x04 # turn-mode switch  ~~crouch~~ 
 BUT_L4 = 0x08 # second switch! slow pan mode + laser on
 BUT_L5 = 0x10 # laser switch (secondary approach for now)
 BUT_L6 = 0x20 # fire gun
-BUT_RT = 0x40 # turn right
-BUT_LT = 0x80 # turn left
+BUT_RT = 0x40 # turn right  # UNUSED as of 4-2024
+BUT_LT = 0x80 # turn left  # UNUSED as of 4-2024
 
 PRINT_DEBUG = False
 PRINT_DEBUG_COMMANDER = 0
@@ -169,7 +169,7 @@ class NumaMain(object):
         self.guns_firing = False
 
         self.gunbutton = False
-        self.crouchbutton = False
+        self.crouchbutton = False  # Not active since 2019
         self.crouchtimeout = 0
         self.slowturret = False
         self.pan_pos = PAN_CENTER
@@ -313,7 +313,7 @@ class NumaMain(object):
         self.cmdrAlive -= 1
         self.cmdrAlive = clamp(self.cmdrAlive, 0, CMDR_ALIVE_CNT)
 
-        #
+        # Get BB loader status information
         adcval_effort = self.ammoMotor.cs_adc.read()
         adcval_loaded = self.bb_detect_adc.read()
         self.bb_loader_service(loopStart, adcval_effort, adcval_loaded)
@@ -335,7 +335,7 @@ class NumaMain(object):
 
         # TODO Test this!
         # Guessing: We go into the g8Crouch pose, then we reenable the torque to the 2nd servo in each leg afterwards
-        if self.crouchbutton:
+        if self.crouchbutton:  # NOTE: This is never enabled currently
             self.crouchCnt += 1
 
             # If we're ready to crouch and aren't already
@@ -379,7 +379,7 @@ class NumaMain(object):
             self.loader_timeout_end = loopStart + LOADER_TIMEOUT_DURATION # microseconds
 
         # We check "panic" before anything else that might move the legs
-        if self.crouch:
+        if self.crouch:  # NOTE: This is never enabled currently because crouchbutton is unused
             self.zero_all_actions()
             return PROG_LOOP_TIME # microseconds
 
@@ -387,7 +387,7 @@ class NumaMain(object):
         if self.turn_loops > 0:
             self.turn_loops -= 1
 
-        # If commander says to turn
+        # If we're turning in place
         if self.turnleft or self.turnright:
             #if PRINT_DEBUG: print("Turn!  %u\t%u", self.turnright, self.turnleft)
 
@@ -416,7 +416,8 @@ class NumaMain(object):
         # Continue turning if we're already turning, until we exceed turn_loops
         elif self.turn_loops > 0:
             pass
-        # Else, walking, possibly
+        # Else, walking or curved walking, possibly
+        # TODO does this include curved walking? 4-7-2024
         else:
             self.turnTimeOffset = 0
 
@@ -559,6 +560,8 @@ class NumaMain(object):
         return now1, now2, now3, now4
 
     def set_new_heading(self, new_dir):
+        # TODO returns a bool that we don't currently use
+
         # Returns True if the change is a big change
         # Calculate ang_dir (degrees); ranges from  ...
         # new_dir:
@@ -677,13 +680,14 @@ class NumaMain(object):
             self.enable_bb_loader = True
 
         # Defaults that might change below
-        dowalking = True
+        dowalking = True  # This could be removed, and make the dowalking==True an else of the below if
         self.curve_dir = 0
         self.walkV = 0
         self.walkH = 0
 
         if self.turn_mode:
-            turnH = self.crx.walkh#v
+            # TODO the region in which curve walking triggers feels really small
+            turnH = self.crx.walkh
             dowalking = False
             if turnH < -80: # LEFT buttonval & BUT_LT:
                 self.turnleft = True
@@ -693,20 +697,22 @@ class NumaMain(object):
                 self.turnleft = False
             elif abs(turnH) > 10: # Curved walking
                 # Walk curving from straight
-                self.walkH = 0
+                # Implicitly, we cause ang_dir to be forward or backwards, with walkH=0 and non-zero walkV value.
+                self.walkH = 0  # always set to this for curved walking? What if we used it to increase magnitude of speed?
                 # Conditionals for four regions of joystick location
-                if turnH > 5:
-                    if crx.walkv > 0:
-                        self.walkV = min(self.crx.walkv, 80)
-                    else:
-                        self.walkV = max(self.crx.walkv, -80)
-                    self.curve_dir = 1
-                elif turnH < -5:
-                    if crx.walkv > 0:
+                if turnH > 5:  # curve right
+                    # TODO why are we taking smaller values here?
+                    if self.crx.walkv > 0:
                         self.walkV = min(self.crx.walkv, 80)
                     else:
                         self.walkV = max(self.crx.walkv, -80)
                     self.curve_dir = -1
+                elif turnH < -5:  # curve left
+                    if self.crx.walkv > 0:
+                        self.walkV = min(self.crx.walkv, 80)
+                    else:
+                        self.walkV = max(self.crx.walkv, -80)
+                    self.curve_dir = 1
                 # TODO (4-7-2024) See if I need this in refamiliarization testing
                 print("ZZZ", turnH, self.walkV, self.walkH, self.curve_dir)
             else: # Do nothing
@@ -714,7 +720,7 @@ class NumaMain(object):
                 self.turnleft = False
                 self.turn = False
 
-        # Old code for turning; holding trigger buttons was unreliable in noisey environ
+        # Old code for turning; holding trigger buttons was unreliable in noisy environ
         #if buttonval & BUT_LT:
         #    if PRINT_DEBUG_COMMANDER: out += "tlft\t"
         #    self.turnleft = True
@@ -756,6 +762,11 @@ class NumaMain(object):
 
 
     def bb_loader_service(self, loopStart, adcval_effort, adcval_loaded):
+        """Load BBs without jamming stuff!
+
+        For any of this functionality to run, enable_bb_loader must be true.
+        This flag variable is set by a switch on the Arbotix Commander.
+        """
         # TODO temporarily disabled
         #self.ammoMotor.direct_set_speed(LOADER_SPEED_OFF)
         #return
