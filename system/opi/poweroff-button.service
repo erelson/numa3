@@ -1,0 +1,9 @@
+[Unit]
+After=NetworkManager.service
+[Service]
+Type=simple
+User=root
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/orangepi/Pi_Poweroff.py
+[Install]
+WantedBy=multi-user.target
