@@ -1,0 +1,14 @@
+[Unit]
+Description=ROS Master
+After=network.target
+
+[Service]
+Type=simple
+User=orangepi
+#Environment="ROS_HOME=/opt/ros/noetic"
+#Environment="ROS_MASTER_URI=http://localhost:11311"
+#Environment="ROS_PACKAGE_PATH=/opt/ros/noetic/share"
+ExecStart=/home/orangepi/launch_roscore.bash
+
+[Install]
+WantedBy=multi-user.target
