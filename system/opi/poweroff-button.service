@@ -1,4 +1,5 @@
 [Unit]
+Description=Service that monitors for power-off button press
 After=NetworkManager.service
 [Service]
 Type=simple
