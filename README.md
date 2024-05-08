@@ -1,7 +1,13 @@
-Project Goals
--------------
+Overview
+--------
 This is the codebase for Numa 3, copied from my work for Numa 2 in 2019, and extended.
 
+See also:
+- https://hackaday.io/project/166096-numa-2-14-dof-mech-warfare-robot
+- https://github.com/erelson/numa2
+
+Project Goals
+-------------
 Numa 3's goals for the 2024 competition center around working towards partial autonomy of a mech.
 - Get a linux computer talking to the PyBoard - Raspberry Pi 3A+
 - Get ROS running on the Pi (Ubuntu 16.04 with ROS Kinetic, via Ubiquity Robotics' image for the RPi3)
@@ -24,3 +30,6 @@ It aims to be incremental progress, and we'll see what I do for the next major c
 There are some definite challenges, such that everything might just not work in a competition environment.
 Some that come to mind as of early 2024:
 - Wifi communication in the Robogames environment could very totally break the ability to do ROS stuff.
+- The laser scanner's field of view is partially blocked. Hopefully enough stuff can be seen to still navigate!
+- The laser scanner is presumed to need protection from BBs. Testing so far shows that a polycarbonate shield
+  still lets about 2/3rds of the laser scan points successfully be registered. Hopefully that's enough to still navigate!

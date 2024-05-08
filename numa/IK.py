@@ -206,7 +206,17 @@ class Gaits():
         return
 
 
-    def walk_code(self, loopLength, half_loopLength, travRate, now1, now2, now3, now4, ang_dir, curve_dir=0):
+    def walk_code(self, loopLength, half_loopLength, travRate, now1, now2, now3, now4, ang_dir, curve_dir=0, curve_scaler=False):
+        """
+        Args:
+            loopLength (): 
+            half_loopLength (): 
+            travRate (float,int): 
+            now1/2/3/4 (): 
+            ang_dir (): 
+            curve_dir: -1, 0 or 1
+            curve_scaler (): Typically not set if being controlled by arbotix commander
+        """
         # OPT: self added for jupyter
         # Get height of each pair of feet
         self.footH13 = calc_foot_h(now2, FH, ALL_FEET_DOWN_TIME_FRAC, half_loopLength, TRANSITION_FRAC, FH_FRAC)
@@ -243,12 +253,14 @@ class Gaits():
         self.trav1 = -1 * ( (double_travRate * (now1 / half_loopLength) ) - travRate )
 
         # curve_dir is -1, 0 or 1; Corresponds with sign of walkH from joystick
-        if curve_dir < 0:
-            self.trav2 *= 0.15
-            self.trav3 *= 0.15
-        elif curve_dir > 0:
-            self.trav1 *= 0.15
-            self.trav4 *= 0.15
+        if curve_dir < 0:  # curve right
+            if not curve_scaler:
+                self.trav2 *= 0.15
+                self.trav3 *= 0.15
+        elif curve_dir > 0:  # curve left
+            if not curve_scaler:
+                self.trav1 *= 0.15
+                self.trav4 *= 0.15
 
         # Compute sines and cosines of trav#...
         # These are x and y components for offsetting foot position from default foot position.
@@ -266,6 +278,161 @@ class Gaits():
 
     #def doLegKinem(self, myT, leg, trav_cdir, trav_sdir,
     #         footH, cos_s1Ang=None, sin_s1Ang=None, debug=0):
+        s12ang, s13ang, s14ang = self.doLegKinem(self.leg1, trav_cdir1, trav_sdir1, self.footH13, self.cos_servo11Ang, self.sin_servo11Ang)
+        s22ang, s23ang, s24ang = self.doLegKinem(self.leg2, trav_cdir2, trav_sdir2, self.footH24, self.cos_servo21Ang, self.sin_servo21Ang)
+        s32ang, s33ang, s34ang = self.doLegKinem(self.leg3, trav_cdir3, trav_sdir3, self.footH13, self.cos_servo31Ang, self.sin_servo31Ang)
+        s42ang, s43ang, s44ang = self.doLegKinem(self.leg4, trav_cdir4, trav_sdir4, self.footH24, self.cos_servo41Ang, self.sin_servo41Ang, debug=1)
+
+        # Calculate coax servo positions as combination of trav vector and default leg position vector
+        # Note trav_sdir/cdir -> trav_[sdir|cdir]2 and trav_sdir/cdir[3|4]->trav_[sdir|cdir]3
+        s11ang = atan2(self.L0 * self.sin_servo11Ang + trav_cdir1,
+                          self.L0 * self.cos_servo11Ang + trav_sdir1) - self.leg1.s1_center_radians
+        s21ang = atan2(self.L0 * self.sin_servo21Ang + trav_cdir2,
+                          self.L0 * self.cos_servo21Ang + trav_sdir2) - self.leg2.s1_center_radians
+        s31ang = atan2(self.L0 * self.sin_servo31Ang + trav_cdir3,
+                          self.L0 * self.cos_servo31Ang + trav_sdir3) - self.leg3.s1_center_radians
+        s41ang = atan2(self.L0 * self.sin_servo41Ang + trav_cdir4,
+                          self.L0 * self.cos_servo41Ang + trav_sdir4) - self.leg4.s1_center_radians
+        #print("Coax angles (walk, radians):", s11ang, s21ang, s31ang, s41ang)
+        #print("Leg4 angles (walk, radians):", s41ang, s42ang, s43ang)
+        #print("Femur angles (turn):", s12ang, s22ang, s32ang, s42ang)
+        #print("Tibia angles (turn):", s13ang, s23ang, s33ang, s43ang)
+
+        self.s11pos, self.s12pos, self.s13pos, self.s14pos = \
+                self.leg1.get_pos_from_radians(s11ang, s12ang, s13ang, s14ang)
+        self.s21pos, self.s22pos, self.s23pos, self.s24pos = \
+                self.leg2.get_pos_from_radians(s21ang, s22ang, s23ang, s24ang)
+        self.s31pos, self.s32pos, self.s33pos, self.s34pos = \
+                self.leg3.get_pos_from_radians(s31ang, s32ang, s33ang, s34ang)
+        self.s41pos, self.s42pos, self.s43pos, self.s44pos = \
+                self.leg4.get_pos_from_radians(s41ang, s42ang, s43ang, s44ang)
+
+
+    def curve_walk_code(self, loopLength, half_loopLength, travRate, now1, now2, now3, now4, radius, forw_or_back, left_or_right):
+        """
+        Args:
+            loopLength (): 
+            half_loopLength (): 
+            travRate (float,int): 
+            now1/2/3/4 (): 
+            radius (): Distance in mm from center of pivot to inside feet 
+            forw_or_back:
+            left_or_right:
+        """
+        # OPT: self added for jupyter
+        # Get height of each pair of feet
+        self.footH13 = calc_foot_h(now2, FH, ALL_FEET_DOWN_TIME_FRAC, half_loopLength, TRANSITION_FRAC, FH_FRAC)
+        self.footH24 = calc_foot_h(now3, FH, ALL_FEET_DOWN_TIME_FRAC, half_loopLength, TRANSITION_FRAC, FH_FRAC)
+
+        #double_travRate = 2 * travRate
+
+        # Now change the now variables so that they track a triangle wave instead of a sawtooth wave
+        if now2 >= half_loopLength:                # Goes from 0ms...5000ms
+            now2 = loopLength - now2            # then 5000ms...0ms
+        if now3 >= half_loopLength:                # Goes from 0ms...5000ms
+            now3 = loopLength - now3            # then 5000ms...0ms
+        if now1 >= half_loopLength:                # Goes from 0ms...5000ms
+            now1 = loopLength - now1            # then 5000ms...0ms
+        if now4 >= half_loopLength:                # Goes from 0ms...5000ms
+            now4 = loopLength - now4            # then 5000ms...0ms
+
+        #/ ///////////////////
+        #/ Now we use the travel direction to calculate leg lengths and coax angles.
+        #/ ///////////////////
+
+        # Angle of foot point travel paths in radians
+        dir_a = atan2(halfspan / radius)
+        dir_b = atan2(halfspan / (radius + width))
+        dir_c = -dir_b
+        dir_d = -dir_a
+
+        # Travel rate of feet in mm
+        travRate_a = travRate * radius / (radius + width)
+        travRate_b = travRate
+        travRate_c = travRate_b
+        travRate_d = travRate_a
+
+        # Leg numbering; lettering for forward left curve
+        #      4\     ^     /3
+        #     a  \    |    /  b
+        #         \ _____ /   
+        #          |     |    
+        #          |numa |    
+        #          |_____|    
+        #         /       \   
+        #     d  /         \  c
+        #      1/           \2
+        # Map the above to the for legs based on curve dir and walk dir
+        if forw_or_back:  # Forward
+            if left_or_right:  # Left
+                # This is the DEFAULT for now.
+                travRate4 = traveRate_a
+                travRate3 = traveRate_b
+                travRate2 = traveRate_c
+                travRate1 = traveRate_d
+                dir4 = dir_a
+                dir3 = dir_b
+                dir2 = dir_c
+                dir1 = dir_d
+            else:  # Right
+                travRate4 = traveRate_b
+                travRate3 = traveRate_a
+                travRate2 = traveRate_d
+                travRate1 = traveRate_c
+                dir4 = dir_b
+                dir3 = dir_a
+                dir2 = dir_d
+                dir1 = dir_c
+        else:  # Back
+            if left_or_right:  # Left
+                travRate4 = traveRate_c
+                travRate3 = traveRate_d
+                travRate2 = traveRate_a
+                travRate1 = traveRate_b
+                dir4 = dir_c
+                dir3 = dir_d
+                dir2 = dir_a
+                dir1 = dir_b
+            else:  # Right
+                travRate4 = traveRate_d
+                travRate3 = traveRate_c
+                travRate2 = traveRate_b
+                travRate1 = traveRate_a
+                dir4 = dir_d
+                dir3 = dir_c
+                dir2 = dir_b
+                dir1 = dir_a
+
+        direction = ang_dir * pi / 180 # radians
+        cdir = cos(direction)
+        sdir = sin(direction)
+
+        # trav values are calculated at each time step
+        # represent offset of foot position in walking direction from standing point of foot.
+        # travN is vector length in walking direction to offset default foot position by.
+        # it's magnitude ranges between +/- travRate
+        # TODO we throw some -1 offsets onto legs 1 and 4... derive why this is...
+        self.trav2 = ( 2 * travRate2 * (now2 / half_loopLength) ) - travRate2
+        self.trav3 = ( 2 * travRate3 * (now3 / half_loopLength) ) - travRate3
+        self.trav4 = -1 * ( (2 * travRate4 * (now4 / half_loopLength) ) - travRate4 )
+        self.trav1 = -1 * ( (2 * travRate1 * (now1 / half_loopLength) ) - travRate1 )
+
+        # Compute sines and cosines of trav#...
+        # These are x and y components for offsetting foot position from default foot position.
+        trav_cdir1 = self.trav1 * cos(dir1)
+        trav_sdir1 = self.trav1 * sin(dir1)
+
+        trav_cdir2 = self.trav2 * cos(dir2)
+        trav_sdir2 = self.trav2 * sin(dir2)
+
+        trav_cdir3 = self.trav3 * cos(dir3)
+        trav_sdir3 = self.trav3 * sin(dir3)
+
+        trav_cdir4 = self.trav4 * cos(dir4)
+        trav_sdir4 = self.trav4 * sin(dir4)
+
+        #def doLegKinem(self, myT, leg, trav_cdir, trav_sdir,
+        #         footH, cos_s1Ang=None, sin_s1Ang=None, debug=0):
         s12ang, s13ang, s14ang = self.doLegKinem(self.leg1, trav_cdir1, trav_sdir1, self.footH13, self.cos_servo11Ang, self.sin_servo11Ang)
         s22ang, s23ang, s24ang = self.doLegKinem(self.leg2, trav_cdir2, trav_sdir2, self.footH24, self.cos_servo21Ang, self.sin_servo21Ang)
         s32ang, s33ang, s34ang = self.doLegKinem(self.leg3, trav_cdir3, trav_sdir3, self.footH13, self.cos_servo31Ang, self.sin_servo31Ang)

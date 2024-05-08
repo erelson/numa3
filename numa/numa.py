@@ -163,7 +163,7 @@ class NumaMain(object):
 
         # Binary vars
         self.walk = False
-        self.turn = False
+        self.turn = False  # unused TODO probably clean this up
         self.light = True
         self.crouch = False # If True, will not move leg servos
         self.guns_firing = False
@@ -181,12 +181,11 @@ class NumaMain(object):
 
         # Various?
         self.turnTimeOffset = 0
-        self.ang_dir = 0 # degrees, 0 is forward, range = -180 to 180
+        self.ang_dir = 0 # degrees, 0 is forward, 90 is right (unconfirmed), range = -180 to 180
         self.turn_dir = 1
         self.turnright = False
         self.turnleft = False
-        self.turn = False
-        self.walkV = 0
+        self.walkV = 0  # This is... ?
         self.walkH = 0
 
         # Temperature reading loop parameters
@@ -333,7 +332,7 @@ class NumaMain(object):
             #
             pass
 
-        # TODO Test this!
+        # TODO Untested/Not in use
         # Guessing: We go into the g8Crouch pose, then we reenable the torque to the 2nd servo in each leg afterwards
         if self.crouchbutton:  # NOTE: This is never enabled currently
             self.crouchCnt += 1
@@ -353,7 +352,6 @@ class NumaMain(object):
             #self.crouchbutton = False
             # Limit to one increment of crouchCnt per button press
             #sleep_ms(10)
-
 
         # If crouch no longer pressed and we're in crouch mode, Exit crouch/panic, enable standing, and re-enable torque to 2nd servo of each leg.
         elif self.crouch:
@@ -387,7 +385,11 @@ class NumaMain(object):
         if self.turn_loops > 0:
             self.turn_loops -= 1
 
-        # If we're turning in place
+        # TODO 4-10-2024 move this movement control logic into a refactored function
+
+
+        ## TURNING
+        # If we're commanding to turn in place
         if self.turnleft or self.turnright:
             #if PRINT_DEBUG: print("Turn!  %u\t%u", self.turnright, self.turnleft)
 
@@ -419,14 +421,20 @@ class NumaMain(object):
         # Else, walking or curved walking, possibly
         # TODO does this include curved walking? 4-7-2024
         else:
-            self.turnTimeOffset = 0
+            self.turnTimeOffset = 0  # Cancels all turning
 
             # New walk direction; Walking forward = 0; TODO am I actually generating clockwise angles instead of cc?
             walkDIR = atan2(self.walkH, self.walkV) # -pi to pi
 
-            # walkSPD is an integer value; 0 or positive
-            walkSPD = sqrt(self.walkV * self.walkV + self.walkH * self.walkH)
-            walkSPD = int(0 + (6 - 0) * (walkSPD - 0) / (102 - 0)) # interpolate(walkSPD, 0,102, 0,6)
+            # walkSPD is an integer value; 0 or positive, up to 6 (length of loopLengthList - 1)
+            if self.curve_dir != 0:
+                # should this switch to turnV/H?
+                walkSPD = sqrt(self.walkV * self.walkV + self.walkH * self.walkH)
+                walkSPD = int(0 + (6 - 0) * (walkSPD - 0) / (102 - 0)) # interpolate(walkSPD, 0,102, 0,6)
+            else:
+                # strafe
+                walkSPD = sqrt(self.walkV * self.walkV + self.walkH * self.walkH)
+                walkSPD = int(0 + (6 - 0) * (walkSPD - 0) / (102 - 0)) # interpolate(walkSPD, 0,102, 0,6)
             #print("WalkDIR:", walkDIR, "WalkSPD:", walkSPD)
 
             # Not walking, and not turning, so stand! We send this pose 5 times to ensure we reach the position.
@@ -437,7 +445,7 @@ class NumaMain(object):
                     self.standing += 1
             # else: already standing, don't re-send the pose
 
-            # Walking
+            # Walking (or curved walking)
             elif walkSPD > 0:
                 if PRINT_DEBUG:
                     print("walk! %f ", (walkDIR * 180.0 / pi))
@@ -465,7 +473,7 @@ class NumaMain(object):
                     self.loopLength = newLoopLength
                 self.walk = True
                 self.set_new_heading(int(walkDIR * 180.0 / pi))
-        #////////////////////////////////////////
+        #///////////////////////////////////////
 
         self.half_loopLength = self.loopLength / 2
         # These don't change currently...
@@ -485,9 +493,9 @@ class NumaMain(object):
         #if 0:  #Disables walking
         if self.walk == True and self.turn_loops == 0:
             self.gaits.walk_code(self.loopLength, self.half_loopLength,
-                                self.travRate,
-                                now1, now2, now3, now4, self.ang_dir,
-                                self.curve_dir)
+                                 self.travRate,
+                                 now1, now2, now3, now4, self.ang_dir,
+                                 self.curve_dir)
 
         #   #Do this in the middle of the calculations to give guns a better firing time accuracy
             #if self.guns_firing and loopStart > self.guns_firing_end_time:
@@ -495,6 +503,15 @@ class NumaMain(object):
             #    self.gunMotor.direct_set_speed(GUN_SPEED_OFF)
             #    self.guns_firing_end_time = loopStart
 
+        # Curved walking
+        elif False:
+            # TODO
+            self.gaits.curve_walk_code(self.loopLength, self.half_loopLength,
+                                 self.travRate, now1, now2, now3, now4, radius, forw_or_back, right_or_left)
+            #self.gaits.curve_walk_code(self.loopLength, self.half_loopLength,
+            #                     self.travRate,
+            #                     now1, now2, now3, now4, self.ang_dir,
+            #                     self.curve_dir)
         # Turning with IK
         elif self.turn_loops > 0 and self.walk == False:
             self.gaits.turn_code(self.turn_dir, self.loopLength, self.half_loopLength, now1, now2, now3, now4)
@@ -695,7 +712,8 @@ class NumaMain(object):
             elif turnH > 80: # RIGHT buttonval & BUT_RT:
                 self.turnright = True
                 self.turnleft = False
-            elif abs(turnH) > 10: # Curved walking
+            #elif abs(turnH) > 10: # Curved walking  # This was inconsistent with value of 5 in nexted conditionals
+            elif abs(turnH) > 5: # Curved walking
                 # Walk curving from straight
                 # Implicitly, we cause ang_dir to be forward or backwards, with walkH=0 and non-zero walkV value.
                 self.walkH = 0  # always set to this for curved walking? What if we used it to increase magnitude of speed?
