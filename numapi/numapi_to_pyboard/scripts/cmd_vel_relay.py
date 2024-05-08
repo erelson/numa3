@@ -1,12 +1,16 @@
 #!/usr/bin/env python
+import socket
 import rospy
 from geometry_msgs.msg import Twist
 import serial
 import struct
 from time import sleep
 
-
-SERIAL_PORT_PATH = "/dev/serial0"
+hostname = socket.gethostname()
+if hostname.startswith("orange"): # orange pi zero 3; other boards may not be the same uart #
+    SERIAL_PORT_PATH = "/dev/ttyAS5"  # Uart5; enabled in orangepi-config
+else:  # Rpi
+    SERIAL_PORT_PATH = "/dev/serial0"
 BAUD = 115200
 
 HEADER = b'\xAB\xCD'  # Header bytes
