@@ -68,6 +68,7 @@ if os.geteuid() != 0:
     exit(1)
 
 # Pin definition
+# RPi
 reset_shutdown_pin = 17
 led_pulldown_pin = 22
 

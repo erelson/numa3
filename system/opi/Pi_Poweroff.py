@@ -6,6 +6,7 @@
 # -----------------------------------------------------------------------------
 # WRITTEN BY: Ho Yun "Bobby" Chan
 # @ SparkFun Electronics
+# MODIFIED for OrangePi ~2024
 # MODIFIED: 3/18/2021
 # DATE: 3/31/2020
 #
@@ -60,7 +61,6 @@
 
 import os
 import time
-#import RPi.GPIO as GPIO #Python Package Reference: https://pypi.org/project/RPi.GPIO/
 import OPi.GPIO as GPIO #Python Package Reference: https://pypi.org/project/OPi.GPIO/
 
 # Must be root
@@ -69,9 +69,6 @@ if os.geteuid() != 0:
     exit(1)
 
 # Pin definition
-# RPi
-#reset_shutdown_pin = 17
-#led_pulldown_pin = 22
 # OPi
 reset_shutdown_pin = 11 # GPIO 70  # PC6
 led_pulldown_pin = 15 # GPIO 72  # PC8
@@ -93,8 +90,9 @@ GPIO.setup(reset_shutdown_pin, GPIO.IN)
 GPIO.setup(led_pulldown_pin, GPIO.OUT)
 GPIO.output(led_pulldown_pin, 0)  # Led off
 
+# Presumably, but not confirmed: start-up indicator of LED turning on for one second
 time.sleep(1)
-GPIO.output(led_pulldown_pin, 1)  # Led off
+GPIO.output(led_pulldown_pin, 1)  # Led on
 time.sleep(1)
 GPIO.output(led_pulldown_pin, 0)  # Led off
 
@@ -126,8 +124,7 @@ while True:
 
     # wait for a button press with switch debounce on the falling edge so that this script
     # is not taking up too many resources in order to shutdown/reboot the Pi safely
-    #channel = GPIO.wait_for_edge(reset_shutdown_pin, GPIO.FALLING, bouncetime=200)  # RPi version
-    #print(help(GPIO.wait_for_edge))
+    # OPi: Unlike RPi, we don't use the bouncetime; but we didn't note why...
     channel = GPIO.wait_for_edge(reset_shutdown_pin, GPIO.FALLING)#, bouncetime=200)
 
     if channel is None:
