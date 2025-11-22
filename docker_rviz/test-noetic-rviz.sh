@@ -10,5 +10,7 @@ docker run -it --rm \
     -e DISALBE_ROS1_EOL_WARNINGS=1 \
     -e ROS_MASTER_URI=http://orangepi:11311 \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v ./exec-rviz-defaults.sh:/root/exec-rviz-defaults.sh \
+    -v ./numa.rviz:/root/numa.rviz \
     -v /mnt/wslg:/mnt/wslg \
     ros-noetic-rviz

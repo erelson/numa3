@@ -8,6 +8,8 @@ Panels:
         - /Status1
         - /LaserScan1
         - /Axes1
+        - /Axes1/Status1
+        - /Axes2
       Splitter Ratio: 0.5
     Tree Height: 555
   - Class: rviz/Selection
@@ -87,7 +89,16 @@ Visualization Manager:
       Length: 0.5
       Name: Axes
       Radius: 0.05000000074505806
-      Reference Frame: base_laser
+      Reference Frame: laser
+      Show Trail: false
+      Value: true
+    - Alpha: 1
+      Class: rviz/Axes
+      Enabled: true
+      Length: 0.5
+      Name: Axes
+      Radius: 0.05000000074505806
+      Reference Frame: imu
       Show Trail: false
       Value: true
   Enabled: true
@@ -118,7 +129,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.932893753051758
+      Distance: 1.7437485456466675
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -134,9 +145,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3653987646102905
+      Pitch: -0.09020331501960754
       Target Frame: <Fixed Frame>
-      Yaw: 4.903585433959961
+      Yaw: 4.698586463928223
     Saved: ~
 Window Geometry:
   Displays:
@@ -154,5 +165,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 615
-  Y: 753
+  X: 583
+  Y: 721
