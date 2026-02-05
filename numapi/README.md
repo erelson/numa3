@@ -6,3 +6,10 @@ Notes on files/folders:
 - numa_bringup.launch
 - numapi_to_pyboard : ROS package with a node for relaying /cmd_vel topic's
   payload to the pyboard over serial
+
+
+
+# See also
+For systemd services:
+- system/opi/
+- system/rpi/

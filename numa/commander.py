@@ -7,7 +7,7 @@ class CommanderRx(object):
     SUCCESS = 1
     CHECKSUM = 2
 
-    # bitmasks for buttons array; see numa2.py for usage
+    # bitmasks for buttons array; see numa.py for usage
     #BUT_R1 = 0x01
     #BUT_R2 = 0x02
     #BUT_R3 = 0x04
