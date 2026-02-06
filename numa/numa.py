@@ -713,7 +713,7 @@ class NumaMain(object):
                 self.turnright = True
                 self.turnleft = False
             #elif abs(turnH) > 10: # Curved walking  # This was inconsistent with value of 5 in nexted conditionals
-            elif abs(turnH) > 5: # Curved walking
+            elif abs(turnH) > 5 and abs(self.crx.walkv) > 5: # Curved walking
                 # Walk curving from straight
                 # Implicitly, we cause ang_dir to be forward or backwards, with walkH=0 and non-zero walkV value.
                 self.walkH = 0  # always set to this for curved walking? What if we used it to increase magnitude of speed?

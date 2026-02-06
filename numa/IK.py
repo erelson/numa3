@@ -366,38 +366,38 @@ class Gaits():
         if forw_or_back:  # Forward
             if left_or_right:  # Left
                 # This is the DEFAULT for now.
-                travRate4 = traveRate_a
-                travRate3 = traveRate_b
-                travRate2 = traveRate_c
-                travRate1 = traveRate_d
+                travRate4 = travRate_a
+                travRate3 = travRate_b
+                travRate2 = travRate_c
+                travRate1 = travRate_d
                 dir4 = dir_a
                 dir3 = dir_b
                 dir2 = dir_c
                 dir1 = dir_d
             else:  # Right
-                travRate4 = traveRate_b
-                travRate3 = traveRate_a
-                travRate2 = traveRate_d
-                travRate1 = traveRate_c
+                travRate4 = travRate_b
+                travRate3 = travRate_a
+                travRate2 = travRate_d
+                travRate1 = travRate_c
                 dir4 = dir_b
                 dir3 = dir_a
                 dir2 = dir_d
                 dir1 = dir_c
         else:  # Back
             if left_or_right:  # Left
-                travRate4 = traveRate_c
-                travRate3 = traveRate_d
-                travRate2 = traveRate_a
-                travRate1 = traveRate_b
+                travRate4 = travRate_c
+                travRate3 = travRate_d
+                travRate2 = travRate_a
+                travRate1 = travRate_b
                 dir4 = dir_c
                 dir3 = dir_d
                 dir2 = dir_a
                 dir1 = dir_b
             else:  # Right
-                travRate4 = traveRate_d
-                travRate3 = traveRate_c
-                travRate2 = traveRate_b
-                travRate1 = traveRate_a
+                travRate4 = travRate_d
+                travRate3 = travRate_c
+                travRate2 = travRate_b
+                travRate1 = travRate_a
                 dir4 = dir_d
                 dir3 = dir_c
                 dir2 = dir_b
