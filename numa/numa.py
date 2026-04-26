@@ -66,8 +66,8 @@ BUT_R3 = 0x04 # turn-mode switch  ~~crouch~~
 BUT_L4 = 0x08 # second switch! slow pan mode + laser on
 BUT_L5 = 0x10 # laser switch (secondary approach for now)
 BUT_L6 = 0x20 # fire gun
-BUT_RT = 0x40 # turn right  # UNUSED as of 4-2024
-BUT_LT = 0x80 # turn left  # UNUSED as of 4-2024
+BUT_RT = 0x40 # snap turret 45 deg right
+BUT_LT = 0x80 # snap turret 45 deg left
 
 PRINT_DEBUG = False
 PRINT_DEBUG_COMMANDER = 0
@@ -690,6 +690,11 @@ class NumaMain(object):
         else:
             pass
 
+        if buttonval & BUT_LT:
+            self.pan_pos = PAN_CENTER + 153  # 45 deg left
+        if buttonval & BUT_RT:
+            self.pan_pos = PAN_CENTER - 153  # 45 deg right
+
         # If button is pressed (or switch is "on") disable BB Loader
         if buttonval & BUT_L5:# and self.cmdrAlive:
             self.enable_bb_loader = False
@@ -738,21 +743,6 @@ class NumaMain(object):
                 self.turnleft = False
                 self.turn = False
 
-        # Old code for turning; holding trigger buttons was unreliable in noisy environ
-        #if buttonval & BUT_LT:
-        #    if PRINT_DEBUG_COMMANDER: out += "tlft\t"
-        #    self.turnleft = True
-        #    self.turnright = False
-        #    dowalking = False
-        #elif buttonval & BUT_RT:
-        #    if PRINT_DEBUG_COMMANDER: out += "trgt\t"
-        #    self.turnright = True
-        #    self.turnleft = False
-        #    dowalking = False
-        #else: # Do nothing
-        #    self.turnright = False
-        #    self.turnleft = False
-        #    self.turn = False
 
         if dowalking:
             # Walk joystick is left joystick
