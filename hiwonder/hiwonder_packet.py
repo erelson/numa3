@@ -239,27 +239,25 @@ class Packet:
         return str(ErrorCode(self.cmd))
 
     def process_byte(self, byte):
-        """Runs a single byte through the packet parsing state
-        machine.
-        
-        Used just for processing return packets from READS, currently.
+        """Runs a single byte through the packet parsing state machine.
+
+        Used for processing return packets from READs.
 
         Returns ErrorCode.NOT_DONE if the packet is incomplete,
         ErrorCode.NONE if the packet was received successfully, and
         ErrorCode.CHECKSUM if a checksum error is detected.
         """
-        #try:
         if self.byte_index == 0:    # 0x55
             if byte != 0x55:
                 return ErrorCode.NOT_DONE
         elif self.byte_index == 1:  # 0x55
             if byte != 0x55:
-                # reset length so we go back to looking for 2 0xff's in a row
+                # reset so we go back to looking for two 0x55's in a row
                 self.byte_index = 0
                 return ErrorCode.NOT_DONE
         elif self.byte_index == 2:  # Device ID
             if byte == 0x55:
-                # Leave the length alone
+                # Leave the index alone
                 return ErrorCode.NOT_DONE
             self.dev_id = byte
             self.checksum = 0
@@ -272,16 +270,12 @@ class Packet:
             self.pkt_bytes[1] = 0x55
             self.pkt_bytes[2] = self.dev_id
             self.pkt_bytes[3] = self.length
-            print("received length:" + str(self.length))
         elif self.byte_index == 4:  # Cmd
             self.cmd = byte
             self.pkt_bytes[4] = byte
-
         elif (self.byte_index + 1) < len(self.pkt_bytes):  # append data bytes
-            #print(str(self.byte_index + 1) + " lt " + str(len(self.pkt_bytes)) + "; got " + hex(byte))
-            print("got data: " + hex(byte))
             self.pkt_bytes[self.byte_index] = byte
-        else: # validate the checksum
+        else:  # validate the checksum
             self.pkt_bytes[self.byte_index] = byte
             self.byte_index = 0
             self.checksum = ~self.checksum & 0xff
@@ -291,9 +285,3 @@ class Packet:
         self.checksum += byte
         self.byte_index += 1
         return ErrorCode.NOT_DONE
-        #except:
-        #    print(byte)
-        #    print(self.length)
-        #    print(self.pkt_bytes)
-        #    print(self.cmd)
-        #    raise
