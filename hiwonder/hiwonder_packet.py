@@ -221,11 +221,13 @@ class Packet:
 
     def params(self):
         """Returns all of the parameter bytes."""
-        return self.pkt_bytes[5:5 + self.length - 2]
+        # HiWonder's length field counts id + length + cmd + params (total
+        # packet = length + 3), so the number of parameter bytes is length - 3.
+        return self.pkt_bytes[5:5 + self.length - 3]
 
     def param_len(self):
         """Returns the length of the parameter bytes."""
-        return self.length - 2
+        return self.length - 3
 
     def error_code(self):
         """Returns the error code, from a response packet, which

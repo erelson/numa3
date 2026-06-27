@@ -91,6 +91,39 @@ class Bus:
         # than returning error bits, so there is no error code to validate here.
         return pkt
 
+    def ping(self, dev_id):
+        """Returns True if a servo with dev_id responds.
+
+        HiWonder has no dedicated PING command; ID_READ (14) is used instead.
+        A servo replies to ID_READ with its own id and, uniquely among the read
+        commands, answers even when addressed by the broadcast id.
+        """
+        try:
+            self.send_read(dev_id, packet.Command.ID_READ)
+            self.read_status_packet()
+        except BusError:
+            return False
+        return True
+
+    def scan(self, start_id=0, num_ids=32, dev_found=None, dev_missing=None):
+        """Scans the bus, calling dev_found(self, dev_id) for each device that
+        responds and dev_missing(self, dev_id) for each that does not.
+
+        Returns True if any devices were found.
+        """
+        end_id = start_id + num_ids - 1
+        if end_id >= packet.Id.BROADCAST:
+            end_id = packet.Id.BROADCAST - 1
+        some_dev_found = False
+        for dev_id in range(start_id, end_id + 1):
+            if self.ping(dev_id):
+                some_dev_found = True
+                if dev_found:
+                    dev_found(self, dev_id)
+            elif dev_missing:
+                dev_missing(self, dev_id)
+        return some_dev_found
+
     def send_read(self, dev_id, cmd):
         """Sends a READ command request to the device."""
         if self.show & Bus.SHOW_COMMANDS:
@@ -107,3 +140,15 @@ class Bus:
         # HiWonder does not acknowledge writes (reading a status packet here just
         # times out with a BusError), so there is nothing to read back.
         return packet.ErrorCode.NONE
+
+    def action(self):
+        """Broadcasts MOVE_START, triggering moves that were primed on each
+        servo with MOVE_TIME_WAIT_WRITE so they begin simultaneously.
+
+        This is HiWonder's nearest analog to the Dynamixel ACTION broadcast;
+        unlike ACTION it only triggers pending moves, not arbitrary deferred
+        writes (HiWonder has no general REG_WRITE).
+        """
+        if self.show & Bus.SHOW_COMMANDS:
+            log('Broadcasting MOVE_START')
+        self.fill_and_write_packet(packet.Id.BROADCAST, packet.Command.MOVE_START)
