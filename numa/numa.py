@@ -48,6 +48,7 @@ import ax
 from helpers import clamp, speedPhaseFix
 from init import myServoReturnLevels, myServoSpeeds, initServoLims
 from commander import CommanderRx
+from servo_group import Servo, ServoGroup
 from poses import gen_numa2_legs, g8Stand, g8FeetDown, g8Crouch
 from IK import Gaits
 
@@ -131,6 +132,10 @@ class NumaMain(object):
                         14, 24, 34, 44]
         self.turret_ids = [51, 52] # pan, tilt
         self.all_ids = self.leg_ids + self.turret_ids
+
+        self.leg_servos = ServoGroup(
+            [Servo(sid, 'ax', self.axbus) for sid in self.leg_ids]
+        )
 
         self.servo51Min, self.servo51Max = PAN_CENTER - 4 * (52+30),  PAN_CENTER + 4 * (52+30)
         self.servo52Min, self.servo52Max = 511 - 4 * 31,              511 + 4 * 65
@@ -360,7 +365,7 @@ class NumaMain(object):
             # Will subsequently automatically stand
 
             # Enable torque second servo of each leg
-            self.axbus.sync_write(self.leg_ids[4:8], ax.TORQUE_ENABLE, [bytearray([1]) for _ in range(4)])
+            self.leg_servos.write_torque(True, indices=range(4, 8))
 
         #elif self.crouchCnt:
 
@@ -529,12 +534,11 @@ class NumaMain(object):
         # Move all servos
         try:
             if self.walk == True or self.turn_loops > 0:
-                self.axbus.sync_write(self.leg_ids, ax.GOAL_POSITION,
-                        [struct.pack('<H', int(pos)) for pos in
+                self.leg_servos.write_positions(
                            (self.gaits.s11pos, self.gaits.s21pos, self.gaits.s31pos, self.gaits.s41pos,
                             self.gaits.s12pos, self.gaits.s22pos, self.gaits.s32pos, self.gaits.s42pos,
                             self.gaits.s13pos, self.gaits.s23pos, self.gaits.s33pos, self.gaits.s43pos,
-                            self.gaits.s14pos, self.gaits.s24pos, self.gaits.s34pos, self.gaits.s44pos)])
+                            self.gaits.s14pos, self.gaits.s24pos, self.gaits.s34pos, self.gaits.s44pos))
                 #print("Coax positions:",self.gaits.s11pos, self.gaits.s21pos, self.gaits.s31pos, self.gaits.s41pos)
                 #print("Femur positions:",self.gaits.s12pos, self.gaits.s22pos, self.gaits.s32pos, self.gaits.s42pos)
                 #print("Tibia positions:",self.gaits.s13pos, self.gaits.s23pos, self.gaits.s33pos, self.gaits.s43pos)
