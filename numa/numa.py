@@ -711,10 +711,10 @@ class NumaMain(object):
             # TODO the region in which curve walking triggers feels really small
             turnH = self.crx.walkh
             dowalking = False
-            if turnH < -80: # LEFT buttonval & BUT_LT:
+            if turnH < -80 and abs(self.crx.walkv) < 20: # LEFT buttonval & BUT_LT:
                 self.turnleft = True
                 self.turnright = False
-            elif turnH > 80: # RIGHT buttonval & BUT_RT:
+            elif turnH > 80 and abs(self.crx.walkv) < 20: # RIGHT buttonval & BUT_RT:
                 self.turnright = True
                 self.turnleft = False
             #elif abs(turnH) > 10: # Curved walking  # This was inconsistent with value of 5 in nexted conditionals
