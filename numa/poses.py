@@ -288,7 +288,7 @@ class LegGeom(object):
         
         Note: Generally combined with an offset representing the servo's center position
         """
-        return int(angle/179.0 * 749)  # Degrees -> servo position
+        return int(angle/180.0 * 750)  # Degrees -> servo position (360 deg = 1500 positions)
 
 
 class LegDef(object):
