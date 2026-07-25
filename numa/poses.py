@@ -271,6 +271,10 @@ class LegGeom(object):
                            "ax12a": self.ax12pos,
                            "hx-35hm": self.hx35hmpos,
         }
+        self.center_lookup = {"ax12": 512,
+                              "ax12a": 512,
+                              "hx-35hm": 750,
+        }
 
     def ax12pos(self, angle):
         """Return an angle converted from degrees into integer position values for the servo
@@ -311,18 +315,24 @@ class LegDef(object):
         # degrees
         a1_stance_offset = self.leg_geom.a1stance if front_leg else self.leg_geom.a1stance_rear
 
-        # Set per-joint position functions based on servo type
-        self.pos1 = leg_geom.pos_lookup[offsets_dict.pop("servo1_type", "ax12")]
-        self.pos2 = leg_geom.pos_lookup[offsets_dict.pop("servo2_type", "ax12")]
-        self.pos3 = leg_geom.pos_lookup[offsets_dict.pop("servo3_type", "ax12")]
-        self.pos4 = leg_geom.pos_lookup[offsets_dict.pop("servo4_type", "ax12")]
+        # Set per-joint position functions and center values based on servo type
+        _t1 = offsets_dict.pop("servo1_type", "ax12")
+        _t2 = offsets_dict.pop("servo2_type", "ax12")
+        _t3 = offsets_dict.pop("servo3_type", "ax12")
+        _t4 = offsets_dict.pop("servo4_type", "ax12")
+        self.pos1 = leg_geom.pos_lookup[_t1]
+        self.pos2 = leg_geom.pos_lookup[_t2]
+        self.pos3 = leg_geom.pos_lookup[_t3]
+        self.pos4 = leg_geom.pos_lookup[_t4]
+        c1 = leg_geom.center_lookup[_t1]
+        c2 = leg_geom.center_lookup[_t2]
+        c3 = leg_geom.center_lookup[_t3]
+        c4 = leg_geom.center_lookup[_t4]
 
-        # This is so tedious, elegance would be cool.
-        # TODO non-AX-12 specific
-        s1lims = [511 + self.s1_sign * self.pos1(leg_geom.max_angle[1]), 511 + self.s1_sign * self.pos1(leg_geom.min_angle[1])]
-        s2lims = [511 + self.s2_sign * self.pos2(leg_geom.max_angle[2]), 511 + self.s2_sign * self.pos2(leg_geom.min_angle[2])]
-        s3lims = [511 + self.s3_sign * self.pos3(leg_geom.max_angle[3]), 511 + self.s3_sign * self.pos3(leg_geom.min_angle[3])]
-        s4lims = [511 + self.s4_sign * self.pos4(leg_geom.max_angle[4]), 511 + self.s4_sign * self.pos4(leg_geom.min_angle[4])]
+        s1lims = [c1 + self.s1_sign * self.pos1(leg_geom.max_angle[1]), c1 + self.s1_sign * self.pos1(leg_geom.min_angle[1])]
+        s2lims = [c2 + self.s2_sign * self.pos2(leg_geom.max_angle[2]), c2 + self.s2_sign * self.pos2(leg_geom.min_angle[2])]
+        s3lims = [c3 + self.s3_sign * self.pos3(leg_geom.max_angle[3]), c3 + self.s3_sign * self.pos3(leg_geom.min_angle[3])]
+        s4lims = [c4 + self.s4_sign * self.pos4(leg_geom.max_angle[4]), c4 + self.s4_sign * self.pos4(leg_geom.min_angle[4])]
         s1lims.sort()
         s2lims.sort()
         s3lims.sort()
@@ -331,8 +341,6 @@ class LegDef(object):
         self.s2min, self.s2max = s2lims
         self.s3min, self.s3max = s3lims
         self.s4min, self.s4max = s4lims
-        # Note: 512 is the real center position per dynamixel wizard, but +/- 512
-        # will take us out of bounds...
         self.s1min = self.s1min if self.s1min >= 0 else 0
         self.s2min = self.s2min if self.s2min >= 0 else 0
         self.s3min = self.s3min if self.s3min >= 0 else 0
@@ -341,13 +349,13 @@ class LegDef(object):
         # Convert offsets in degrees to servo values
         self.s1_center_angle = self.s1_sign * (leg_geom.aoffset1 + a1_stance_offset)
         self.s1_center_radians = self.s1_center_angle / RAD_TO_ANGLE
-        self.s1_center = 512 + self.pos1(self.s1_center_angle)
-        self.s2_center = 512 + self.pos2(self.s2_sign * leg_geom.aoffset2)
-        self.s3_center = 512 + self.pos3(self.s3_sign * leg_geom.aoffset3)
+        self.s1_center = c1 + self.pos1(self.s1_center_angle)
+        self.s2_center = c2 + self.pos2(self.s2_sign * leg_geom.aoffset2)
+        self.s3_center = c3 + self.pos3(self.s3_sign * leg_geom.aoffset3)
         if leg_geom.aoffset4:
-            self.s4_center = 512 + self.pos4(self.s4_sign * leg_geom.aoffset4)
+            self.s4_center = c4 + self.pos4(self.s4_sign * leg_geom.aoffset4)
         else:
-            self.s4_center = 512
+            self.s4_center = c4
 
     def get_pos_from_angle(self, a1, a2, a3, a4=None):
         # Angles are in degrees. Returns list of servo positions
