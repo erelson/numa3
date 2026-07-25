@@ -33,3 +33,14 @@ Some that come to mind as of early 2024:
 - The laser scanner's field of view is partially blocked. Hopefully enough stuff can be seen to still navigate!
 - The laser scanner is presumed to need protection from BBs. Testing so far shows that a polycarbonate shield
   still lets about 2/3rds of the laser scan points successfully be registered. Hopefully that's enough to still navigate!
+
+Miscellaneous thoughts on switching some servos to HiWonder HX-35M
+-------------
+Weight:
+- AX-12A: 54.6 g
+- HX-35M: 72 g
+- Numa weight: ??? kg
+- MX-28: 181 g ??? (0.4lbs on website)
+- MX-64: 132.2 g
+
+MX-64 is listed as 0.5 lbs (220 g) on website; might be the box weight.
