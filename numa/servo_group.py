@@ -37,16 +37,21 @@ class ServoGroup:
                 return s.bus
         return None
 
-    def write_positions(self, positions, move_ms=500):
-        """Send goal positions to all servos.
+    def write_positions(self, positions, move_ms=500, indices=None):
+        """Send goal positions to servos.
 
         AX servos are batched into a single sync_write. HiWonder servos
         receive individual MOVE_TIME_WRITE commands. move_ms sets the
         travel duration for HiWonder servos and is ignored for AX.
+        indices, if given, selects a subset of servos (matched to positions).
         """
+        if indices is not None:
+            pairs = [(self.servos[i], pos) for i, pos in zip(indices, positions)]
+        else:
+            pairs = list(zip(self.servos, positions))
         ax_ids, ax_vals = [], []
         t = int(move_ms)
-        for servo, pos in zip(self.servos, positions):
+        for servo, pos in pairs:
             p = int(pos)
             if servo.kind == 'ax':
                 ax_ids.append(servo.id)

@@ -247,13 +247,13 @@ class NumaMain(object):
         #ax12SetID(&servo1, 1)
 
         # Call gait for Standing
-        self.g8countdown = g8Stand(self.gaits, self.axbus, self.leg_ids)
+        self.g8countdown = g8Stand(self.gaits, self.leg_servos)
 
-        myServoReturnLevels(self.axbus, all_ids=self.all_ids)
+        myServoReturnLevels(self.leg_servos, self.axbus, self.turret_ids)
         print("ServoReturnLevelsSet!")
-        initServoLims(self.axbus, self.all_ids, self.gaits)
+        initServoLims(self.leg_servos, self.axbus, self.turret_ids, self.gaits)
         print("ServoLimsSet!")
-        myServoSpeeds(self.axbus, self.leg_ids, self.turret_ids)
+        myServoSpeeds(self.leg_servos, self.axbus, self.turret_ids)
         print("ServoSpeedsSet!")
 
         # Setting mathy initial values for walking
@@ -264,7 +264,7 @@ class NumaMain(object):
 
         # TODO self.standing doesn't seem accurate anymore
         self.standing = 1 # 0: not standing; 1-5 will lower feet; 6+: feet are down, and robot is standing
-        self.g8countdown = g8Stand(self.gaits, self.axbus, self.leg_ids)
+        self.g8countdown = g8Stand(self.gaits, self.leg_servos)
 
         return 0
 
@@ -344,7 +344,7 @@ class NumaMain(object):
 
             # If we're ready to crouch and aren't already
             if self.crouchCnt >= LOOPS_B4_CROUCH and not self.crouch:
-                self.g8countdown = g8Crouch(self.gaits, self.axbus, self.leg_ids) # This disables torque to second servo in each leg
+                self.g8countdown = g8Crouch(self.gaits, self.leg_servos) # This disables torque to second servo in each leg
                 self.crouch = True
                 print("Howdydoo?", self.crouchCnt)
                 self.crouchCnt = 0
@@ -444,7 +444,7 @@ class NumaMain(object):
 
             # Not walking, and not turning, so stand! We send this pose 5 times to ensure we reach the position.
             if walkSPD == 0 and self.turn_loops == 0:
-                self.g8countdown = g8Stand(self.gaits, self.axbus, self.leg_ids)
+                self.g8countdown = g8Stand(self.gaits, self.leg_servos)
                 self.walk = False
                 if self.standing < 6:
                     self.standing += 1
@@ -524,11 +524,11 @@ class NumaMain(object):
 
         elif self.standing > 0 and self.standing <= 5:
             # or g8Stand?
-            self.g8countdown = g8FeetDown(self.gaits, self.axbus, self.leg_ids)
+            self.g8countdown = g8FeetDown(self.gaits, self.leg_servos)
 
         elif self.turn_loops > 0 and self.walk == True:
             # or g8Stand?
-            self.g8countdown = g8FeetDown(self.gaits, self.axbus, self.leg_ids)
+            self.g8countdown = g8FeetDown(self.gaits, self.leg_servos)
 
 
         # Move all servos
@@ -591,7 +591,7 @@ class NumaMain(object):
 
         #if not previously walking with IK...
         #if not self.walk: #TODO Not needed?
-        #    self.g8countdown = g8Stand(self.gaits, self.axbus, self.leg_ids)  # Note: walk is now FALSE; set walk after this.
+        #    self.g8countdown = g8Stand(self.gaits, self.leg_servos)  # Note: walk is now FALSE; set walk after this.
         #    ang_dir = new_dir
         #    # NEED TO SET TIMING HERE
         # End former indent
@@ -601,7 +601,7 @@ class NumaMain(object):
         #if self.ang_dir is None or abs((new_dir - self.ang_dir + 180) % 360 - 180) >= 20: #TODO enhancement; we don't need to be sending g8Stand if we go: forward. stop. backwards. (vs just forward, then instantly backwards)
         if abs((new_dir - self.ang_dir + 180) % 360 - 180) >= 20:
 
-            self.g8countdown = g8Stand(self.gaits, self.axbus, self.leg_ids) # Note: walk is now FALSE; g8Stand sets walk
+            self.g8countdown = g8Stand(self.gaits, self.leg_servos) # Note: walk is now FALSE; g8Stand sets walk
             self.ang_dir = new_dir
             return True
         # else update direction

@@ -1,4 +1,3 @@
-import struct
 import sys
 from math import pi
 sysname = sys.platform
@@ -9,15 +8,13 @@ if sysname == 'linux' or sysname == 'win32':
 elif sysname == 'pyboard':
     from utime import sleep_ms
 
-import ax
-
 
 RAD_TO_ANGLE = 180./pi
 
 # NOTE: All g8 pose functions should return a wait time in ms
 
 # Send neutral standing positions to all servos.
-def g8Stand(gait, axbus, leg_ids):
+def g8Stand(gait, leg_servos):
     a2 = 45
     a3 = -125
     a4 = 0
@@ -31,25 +28,18 @@ def g8Stand(gait, axbus, leg_ids):
     gait.s41pos, gait.s42pos, gait.s43pos, gait.s44pos = \
             gait.leg4.get_pos_from_angle(0, a2, a3, a4)
 
-    axbus.sync_write(leg_ids, ax.GOAL_POSITION,
-            [struct.pack('<H', int(pos)) for pos in
-                       (gait.s11pos, gait.s21pos, gait.s31pos, gait.s41pos,
-                        gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                        gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                        gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos)])
-#    sleep_ms(2000)
-
-    # stop IK and Gait from processing, whichever was active...
-    #walk = False
+    leg_servos.write_positions(
+               (gait.s11pos, gait.s21pos, gait.s31pos, gait.s41pos,
+                gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
+                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos))
     return 1000
 
 # Send standing positions to all servos. BUT don't rotate legs to center position
-def g8FeetDown(gait, axbus, leg_ids):
+def g8FeetDown(gait, leg_servos):
     a2 = 45
     a3 = -125
     a4 = 0
-    # Don't send positions to coax servos
-    my_leg_ids = leg_ids[4:]
     _, gait.s12pos, gait.s13pos, gait.s14pos = \
             gait.leg1.get_pos_from_angle(0, a2, a3, a4)
     _, gait.s22pos, gait.s23pos, gait.s24pos = \
@@ -58,23 +48,17 @@ def g8FeetDown(gait, axbus, leg_ids):
             gait.leg3.get_pos_from_angle(0, a2, a3, a4)
     _, gait.s42pos, gait.s43pos, gait.s44pos = \
             gait.leg4.get_pos_from_angle(0, a2, a3, a4)
-    axbus.sync_write(my_leg_ids, ax.GOAL_POSITION,
-            [struct.pack('<H', int(pos)) for pos in
-                       (gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                        gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                        gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos)])
-
-    # TODO
-    #sleep_ms(200) #probably too short, but a long wait is scary, too.
-
-    # stop IK and Gait from processing, whichever was active...
-    #walk = False
+    # Don't send positions to coax servos (indices 0-3)
+    leg_servos.write_positions(
+               (gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
+                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos),
+               indices=range(4, 16))
     return 1000
 
 # Send standing positions to all servos.
-def g8Flop(gait, axbus, leg_ids):
+def g8Flop(gait, leg_servos):
     # TODO unused; TODO define updated angles
-
     a2 = 45
     a3 = -125
     a4 = 0
@@ -88,30 +72,20 @@ def g8Flop(gait, axbus, leg_ids):
     gait.s41pos, gait.s42pos, gait.s43pos, gait.s44pos = \
             gait.leg4.get_pos_from_angle(0, a2, a3, a4)
 
-    axbus.sync_write(leg_ids, ax.GOAL_POSITION,
-            [struct.pack('<H', int(pos)) for pos in
-                       (gait.s11pos, gait.s21pos, gait.s31pos, gait.s41pos,
-                        gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                        gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                        gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos)])
-    # TODO
-    #sleep_ms(2000) #probably too short, but a long wait is scary, too.
-
-    # stop IK and Gait from processing, whichever was active...
-    #walk = False
+    leg_servos.write_positions(
+               (gait.s11pos, gait.s21pos, gait.s31pos, gait.s41pos,
+                gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
+                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos))
     return 1000
 
 # Lower feet to ground regardless of shoulder servo position, then cut torque to prevent overheating
-def g8Crouch(gait, axbus, leg_ids):
-    my_leg_ids = leg_ids[4:]
-
-    # OLD: These should be same as g8Stand
+def g8Crouch(gait, leg_servos):
     # angles are leg angles
     a2 = 90
     a3 = -155
     a4 = 0
-    # Don't set positions to coax servos
-    my_leg_ids = leg_ids[4:]
+    # Don't send positions to coax servos (indices 0-3)
     _, gait.s12pos, gait.s13pos, gait.s14pos = \
             gait.leg1.get_pos_from_angle(0, a2, a3, a4)
     _, gait.s22pos, gait.s23pos, gait.s24pos = \
@@ -121,23 +95,15 @@ def g8Crouch(gait, axbus, leg_ids):
     _, gait.s42pos, gait.s43pos, gait.s44pos = \
             gait.leg4.get_pos_from_angle(0, a2, a3, a4)
 
-#    sleep_ms(2000) #probably too short, but a long wait is scary, too.
+    leg_servos.write_positions(
+               (gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
+                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos),
+               indices=range(4, 16))
 
-    # stop IK and Gait from processing, whichever was active...
-    #walk = False
-
-    # ??
-    axbus.sync_write(my_leg_ids, ax.GOAL_POSITION,
-            [struct.pack('<H', int(pos)) for pos in
-                       (gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                        gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                        gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos)])
-
-    # Let the servos move
+    # Let the servos move, then disable torque to femur servos (indices 4-7)
     sleep_ms(400)
-
-    # Disable torque to 2nd servo of each leg
-    axbus.sync_write(leg_ids[4:8], ax.TORQUE_ENABLE, [bytearray([0]) for __ in range(4)])
+    leg_servos.write_torque(False, indices=range(4, 8))
 
     return 1000
 
