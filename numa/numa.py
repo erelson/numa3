@@ -40,6 +40,7 @@ elif sysname == 'pyboard':
     from stm_uart_port import UART_Port
     from pyb import Pin, UART, ADC
     from bus import Bus, BusError
+    from hiwonder_bus import Bus as HWBus
     from utime import ticks_us, ticks_diff, sleep_us, sleep_ms
     from MotorDriver import MotorDriver
 
@@ -108,17 +109,24 @@ class NumaMain(object):
     def __init__(self,
                  gaits,
                  cmdrbus=None,
-                 axbus=None#, show=Bus.SHOW_PACKETS) # can print the packets...
+                 axbus=None,   # AX-12 bus; defaults to UART2 @ 1Mbaud
+                 hw_bus=None,  # HiWonder bus; defaults to UART4 @ 115200
             ):
         print("Initializing NumaMain!...")
         if cmdrbus:
             self.cmdrbus = cmdrbus
         else:
-            self.cmdrbus = UART(1, 38400) #UART_Port(1, 38400)
+            self.cmdrbus = UART(1, 38400)
         if axbus:
             self.axbus = axbus
         else:
-            self.axbus = Bus(UART_Port(2, 1000000))#, show=2)
+            self.axbus = Bus(UART_Port(2, 1000000))
+        if hw_bus is not None:
+            self.hw_bus = hw_bus
+        elif sysname == 'pyboard':
+            self.hw_bus = HWBus(UART_Port(4, 115200))
+        else:
+            self.hw_bus = None
 
         self.crx = CommanderRx()
         self.cmdrAlive = 0
@@ -133,9 +141,20 @@ class NumaMain(object):
         self.turret_ids = [51, 52] # pan, tilt
         self.all_ids = self.leg_ids + self.turret_ids
 
-        self.leg_servos = ServoGroup(
-            [Servo(sid, 'ax', self.axbus) for sid in self.leg_ids]
-        )
+        # Build per-servo-ID type map from LegDef.servo_types
+        # servo_types order: [joint1, joint2, joint3, joint4] per leg
+        _type_map = {}
+        for leg_num, leg_def in enumerate([gaits.leg1, gaits.leg2, gaits.leg3, gaits.leg4], 1):
+            for joint_num, kind in enumerate(leg_def.servo_types, 1):
+                _type_map[leg_num * 10 + joint_num] = kind
+
+        def _bus_for(kind):
+            return self.hw_bus if kind.startswith('hx') else self.axbus
+
+        self.leg_servos = ServoGroup([
+            Servo(sid, _type_map[sid], _bus_for(_type_map[sid]))
+            for sid in self.leg_ids
+        ])
 
         self.servo51Min, self.servo51Max = PAN_CENTER - 4 * (52+30),  PAN_CENTER + 4 * (52+30)
         self.servo52Min, self.servo52Max = 511 - 4 * 31,              511 + 4 * 65
@@ -849,7 +868,10 @@ class NumaMain(object):
             print(cnt, x)
 
 def main():
-    leg_geom, leg1, leg2, leg3, leg4 = gen_numa2_legs()
+    # To use HiWonder servos on specific joints, pass leg_servo_types, e.g.:
+    #   leg_servo_types = {1: {'servo1_type': 'hx-35hm'}, 2: {'servo1_type': 'hx-35hm'}}
+    leg_servo_types = {}
+    leg_geom, leg1, leg2, leg3, leg4 = gen_numa2_legs(leg_servo_types)
     gaits = Gaits(leg_geom, leg1, leg2, leg3, leg4)
     x = NumaMain(gaits)
     # Safety...

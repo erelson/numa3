@@ -147,11 +147,20 @@ def g8Crouch(gait, leg_servos):
 #
 #      |________legLen__aka L0___|
 
-def gen_numa2_legs():
+def gen_numa2_legs(leg_servo_types=None):
+    """Generate leg geometry and leg definitions for Numa 2/3.
+
+    leg_servo_types: optional dict mapping leg number (1-4) to a dict of
+        servo type overrides, e.g.:
+        {1: {'servo1_type': 'hx-35hm'}, 2: {'servo1_type': 'hx-35hm'}}
+        Any unspecified joints default to 'ax12'.
+    """
+    if leg_servo_types is None:
+        leg_servo_types = {}
 # 4\ __^__ /3
-#   |     | 
-#   |numa2| 
-#   |_____| 
+#   |     |
+#   |numa2|
+#   |_____|
 # 1/       \2
     stance = 5  # degrees; see README
     offsets_dict = {
@@ -180,10 +189,10 @@ def gen_numa2_legs():
     leg_model = LegGeom(offsets_dict)
 
     # leg_geom, s1_sign, s2_sign, s3_sign, s4_sign=None, front_leg=True):
-    leg1 = LegDef(leg_model, offsets_dict,  1, -1,  1)
-    leg2 = LegDef(leg_model, offsets_dict, -1,  1, -1)
-    leg3 = LegDef(leg_model, offsets_dict,  1, -1,  1, front_leg=True)
-    leg4 = LegDef(leg_model, offsets_dict, -1,  1, -1, front_leg=True)
+    leg1 = LegDef(leg_model, dict(leg_servo_types.get(1, {})),  1, -1,  1)
+    leg2 = LegDef(leg_model, dict(leg_servo_types.get(2, {})), -1,  1, -1)
+    leg3 = LegDef(leg_model, dict(leg_servo_types.get(3, {})),  1, -1,  1, front_leg=True)
+    leg4 = LegDef(leg_model, dict(leg_servo_types.get(4, {})), -1,  1, -1, front_leg=True)
 
     return leg_model, leg1, leg2, leg3, leg4
 
@@ -286,6 +295,7 @@ class LegDef(object):
         _t2 = offsets_dict.pop("servo2_type", "ax12")
         _t3 = offsets_dict.pop("servo3_type", "ax12")
         _t4 = offsets_dict.pop("servo4_type", "ax12")
+        self.servo_types = [_t1, _t2, _t3, _t4]
         self.pos1 = leg_geom.pos_lookup[_t1]
         self.pos2 = leg_geom.pos_lookup[_t2]
         self.pos3 = leg_geom.pos_lookup[_t3]
