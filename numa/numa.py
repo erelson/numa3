@@ -37,6 +37,13 @@ if sysname == 'linux' or sysname == 'win32':
     print("UART_PORT is:", UART_Port)
 
 elif sysname == 'pyboard':
+    import machine, ubinascii
+    _BOARD_ID = ubinascii.hexlify(machine.unique_id()).decode()
+    BOARD_TESTBED = '3700530005504b4d52323420'
+    BOARD_ROBOT   = '380046001951363039343332'
+    assert _BOARD_ID in (BOARD_TESTBED, BOARD_ROBOT), "Unknown board: " + _BOARD_ID
+    IS_ROBOT = (_BOARD_ID == BOARD_ROBOT)
+
     from stm_uart_port import UART_Port
     from pyb import Pin, UART, ADC
     from bus import Bus, BusError
