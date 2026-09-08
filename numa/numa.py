@@ -186,8 +186,8 @@ class NumaMain(object):
         # NOTE this might not match my actual wiring due to compensating for weird behavior where it spins at startup
         self.ammoMotor = MotorDriver(Pin.board.Y9, Pin.board.Y12, Pin.board.Y10, cs=Pin.board.Y11)
 
-        self.bb_detect_adc = ADC(Pin.board.X1)
-        self.bb_detect_led = Pin(Pin.board.X2, mode=Pin.OUT)
+        self.bb_detect_adc = ADC(Pin.board.X21)
+        self.bb_detect_led = Pin(Pin.board.X22, mode=Pin.OUT)
         self.bb_detect_adc_loopcnt = 0
         self.MIN_ADC_NO_BB = 80
         self.laserGPIO = Pin(PARAM_LASER_PIN, mode=Pin.OUT)
