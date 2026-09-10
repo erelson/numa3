@@ -1,0 +1,4 @@
+[submodule "bioloid3"]
+	path = bioloid3
+	url = https://github.com/erelson/bioloid3.git
+	branch = erelson_fixes_1
