@@ -1,1 +1,19 @@
+# Deploy staging (deploy_pyboard.py)
 micropy-to-upload
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Editor / backup files
+*~
+*.bak
+
+# PyBoard flash backups pulled off boards
+numa2_robot_flash_backup*.py
+
+# Generated images from viz/optimizer tools (gait_compare, gait_velocity,
+# joystick_zones, etc.). Design-reference SVGs are tracked and unaffected;
+# force-add a wanted raster with `git add -f`.
+*.png
+*.gif
