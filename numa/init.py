@@ -23,12 +23,11 @@ PAN_CENTER = 511 + 153
 
 def initServoLims(leg_servos, axbus, turret_ids, gaits):
     l1, l2, l3, l4 = gaits.leg1, gaits.leg2, gaits.leg3, gaits.leg4
-    # Limits in leg_ids order: coax x4, femur x4, tibia x4, foot x4
+    # Limits in leg_ids order: coax x4, femur x4, tibia x4
     leg_lims = [
         [l1.s1min, l1.s1max], [l2.s1min, l2.s1max], [l3.s1min, l3.s1max], [l4.s1min, l4.s1max],
         [l1.s2min, l1.s2max], [l2.s2min, l2.s2max], [l3.s2min, l3.s2max], [l4.s2min, l4.s2max],
         [l1.s3min, l1.s3max], [l2.s3min, l2.s3max], [l3.s3min, l3.s3max], [l4.s3min, l4.s3max],
-        [l1.s4min, l1.s4max], [l2.s4min, l2.s4max], [l3.s4min, l3.s4max], [l4.s4min, l4.s4max],
     ]
     turret_lims = [
         [PAN_CENTER - 4 * (52+30), PAN_CENTER + 4 * (52+30)],  # 51

@@ -186,10 +186,6 @@ class Gaits():
         self.s23pos = 0
         self.s33pos = 0
         self.s43pos = 0
-        self.s14pos = 511
-        self.s24pos = 511
-        self.s34pos = 511
-        self.s44pos = 511
 
         self.initTrig()
 
@@ -278,10 +274,10 @@ class Gaits():
 
     #def doLegKinem(self, myT, leg, trav_cdir, trav_sdir,
     #         footH, cos_s1Ang=None, sin_s1Ang=None, debug=0):
-        s12ang, s13ang, s14ang = self.doLegKinem(self.leg1, trav_cdir1, trav_sdir1, self.footH13, self.cos_servo11Ang, self.sin_servo11Ang)
-        s22ang, s23ang, s24ang = self.doLegKinem(self.leg2, trav_cdir2, trav_sdir2, self.footH24, self.cos_servo21Ang, self.sin_servo21Ang)
-        s32ang, s33ang, s34ang = self.doLegKinem(self.leg3, trav_cdir3, trav_sdir3, self.footH13, self.cos_servo31Ang, self.sin_servo31Ang)
-        s42ang, s43ang, s44ang = self.doLegKinem(self.leg4, trav_cdir4, trav_sdir4, self.footH24, self.cos_servo41Ang, self.sin_servo41Ang, debug=1)
+        s12ang, s13ang = self.doLegKinem(self.leg1, trav_cdir1, trav_sdir1, self.footH13, self.cos_servo11Ang, self.sin_servo11Ang)
+        s22ang, s23ang = self.doLegKinem(self.leg2, trav_cdir2, trav_sdir2, self.footH24, self.cos_servo21Ang, self.sin_servo21Ang)
+        s32ang, s33ang = self.doLegKinem(self.leg3, trav_cdir3, trav_sdir3, self.footH13, self.cos_servo31Ang, self.sin_servo31Ang)
+        s42ang, s43ang = self.doLegKinem(self.leg4, trav_cdir4, trav_sdir4, self.footH24, self.cos_servo41Ang, self.sin_servo41Ang, debug=1)
 
         # Calculate coax servo positions as combination of trav vector and default leg position vector
         # Note trav_sdir/cdir -> trav_[sdir|cdir]2 and trav_sdir/cdir[3|4]->trav_[sdir|cdir]3
@@ -298,14 +294,14 @@ class Gaits():
         #print("Femur angles (turn):", s12ang, s22ang, s32ang, s42ang)
         #print("Tibia angles (turn):", s13ang, s23ang, s33ang, s43ang)
 
-        self.s11pos, self.s12pos, self.s13pos, self.s14pos = \
-                self.leg1.get_pos_from_radians(s11ang, s12ang, s13ang, s14ang)
-        self.s21pos, self.s22pos, self.s23pos, self.s24pos = \
-                self.leg2.get_pos_from_radians(s21ang, s22ang, s23ang, s24ang)
-        self.s31pos, self.s32pos, self.s33pos, self.s34pos = \
-                self.leg3.get_pos_from_radians(s31ang, s32ang, s33ang, s34ang)
-        self.s41pos, self.s42pos, self.s43pos, self.s44pos = \
-                self.leg4.get_pos_from_radians(s41ang, s42ang, s43ang, s44ang)
+        self.s11pos, self.s12pos, self.s13pos = \
+                self.leg1.get_pos_from_radians(s11ang, s12ang, s13ang)
+        self.s21pos, self.s22pos, self.s23pos = \
+                self.leg2.get_pos_from_radians(s21ang, s22ang, s23ang)
+        self.s31pos, self.s32pos, self.s33pos = \
+                self.leg3.get_pos_from_radians(s31ang, s32ang, s33ang)
+        self.s41pos, self.s42pos, self.s43pos = \
+                self.leg4.get_pos_from_radians(s41ang, s42ang, s43ang)
 
 
     def curve_walk_code(self, loopLength, half_loopLength, travRate, now1, now2, now3, now4, radius, forw_or_back, left_or_right):
@@ -433,10 +429,10 @@ class Gaits():
 
         #def doLegKinem(self, myT, leg, trav_cdir, trav_sdir,
         #         footH, cos_s1Ang=None, sin_s1Ang=None, debug=0):
-        s12ang, s13ang, s14ang = self.doLegKinem(self.leg1, trav_cdir1, trav_sdir1, self.footH13, self.cos_servo11Ang, self.sin_servo11Ang)
-        s22ang, s23ang, s24ang = self.doLegKinem(self.leg2, trav_cdir2, trav_sdir2, self.footH24, self.cos_servo21Ang, self.sin_servo21Ang)
-        s32ang, s33ang, s34ang = self.doLegKinem(self.leg3, trav_cdir3, trav_sdir3, self.footH13, self.cos_servo31Ang, self.sin_servo31Ang)
-        s42ang, s43ang, s44ang = self.doLegKinem(self.leg4, trav_cdir4, trav_sdir4, self.footH24, self.cos_servo41Ang, self.sin_servo41Ang, debug=1)
+        s12ang, s13ang = self.doLegKinem(self.leg1, trav_cdir1, trav_sdir1, self.footH13, self.cos_servo11Ang, self.sin_servo11Ang)
+        s22ang, s23ang = self.doLegKinem(self.leg2, trav_cdir2, trav_sdir2, self.footH24, self.cos_servo21Ang, self.sin_servo21Ang)
+        s32ang, s33ang = self.doLegKinem(self.leg3, trav_cdir3, trav_sdir3, self.footH13, self.cos_servo31Ang, self.sin_servo31Ang)
+        s42ang, s43ang = self.doLegKinem(self.leg4, trav_cdir4, trav_sdir4, self.footH24, self.cos_servo41Ang, self.sin_servo41Ang, debug=1)
 
         # Calculate coax servo positions as combination of trav vector and default leg position vector
         # Note trav_sdir/cdir -> trav_[sdir|cdir]2 and trav_sdir/cdir[3|4]->trav_[sdir|cdir]3
@@ -453,14 +449,14 @@ class Gaits():
         #print("Femur angles (turn):", s12ang, s22ang, s32ang, s42ang)
         #print("Tibia angles (turn):", s13ang, s23ang, s33ang, s43ang)
 
-        self.s11pos, self.s12pos, self.s13pos, self.s14pos = \
-                self.leg1.get_pos_from_radians(s11ang, s12ang, s13ang, s14ang)
-        self.s21pos, self.s22pos, self.s23pos, self.s24pos = \
-                self.leg2.get_pos_from_radians(s21ang, s22ang, s23ang, s24ang)
-        self.s31pos, self.s32pos, self.s33pos, self.s34pos = \
-                self.leg3.get_pos_from_radians(s31ang, s32ang, s33ang, s34ang)
-        self.s41pos, self.s42pos, self.s43pos, self.s44pos = \
-                self.leg4.get_pos_from_radians(s41ang, s42ang, s43ang, s44ang)
+        self.s11pos, self.s12pos, self.s13pos = \
+                self.leg1.get_pos_from_radians(s11ang, s12ang, s13ang)
+        self.s21pos, self.s22pos, self.s23pos = \
+                self.leg2.get_pos_from_radians(s21ang, s22ang, s23ang)
+        self.s31pos, self.s32pos, self.s33pos = \
+                self.leg3.get_pos_from_radians(s31ang, s32ang, s33ang)
+        self.s41pos, self.s42pos, self.s43pos = \
+                self.leg4.get_pos_from_radians(s41ang, s42ang, s43ang)
 
 
     def turn_code(self, turn_dir, loopLength, half_loopLength, now1, now2, now3, now4):
@@ -486,10 +482,10 @@ class Gaits():
         #self.s22pos, self.s23pos, self.s24pos = self.doLegKinem(now2, self.leg2, 0, 0, self.footH24)
         #self.s32pos, self.s33pos, self.s34pos = self.doLegKinem(now3, self.leg3, 0, 0, self.footH13)
         #self.s42pos, self.s43pos, self.s44pos = self.doLegKinem(now4, self.leg4, 0, 0, self.footH24, debug=1)
-        s12ang, s13ang, s14ang = self.doLegKinem(self.leg1, 0, 0, self.footH13)
-        s22ang, s23ang, s24ang = self.doLegKinem(self.leg2, 0, 0, self.footH24)
-        s32ang, s33ang, s34ang = self.doLegKinem(self.leg3, 0, 0, self.footH13)
-        s42ang, s43ang, s44ang = self.doLegKinem(self.leg4, 0, 0, self.footH24, debug=1)
+        s12ang, s13ang = self.doLegKinem(self.leg1, 0, 0, self.footH13)
+        s22ang, s23ang = self.doLegKinem(self.leg2, 0, 0, self.footH24)
+        s32ang, s33ang = self.doLegKinem(self.leg3, 0, 0, self.footH13)
+        s42ang, s43ang = self.doLegKinem(self.leg4, 0, 0, self.footH24, debug=1)
 
         #self.s11pos = 511 + ( 45 + self.s11Aoff + turn_dir * TURN_ANGLE*(2*now3/loopLength - 0.5))*1024.0/300.0
         #self.s21pos = 511 + (-45 + self.s21Aoff + turn_dir * TURN_ANGLE*(2*now2/loopLength - 0.5))*1024.0/300.0
@@ -505,14 +501,14 @@ class Gaits():
         s41ang = turn_dir * turn_angle24
         #print("Coax angles (turn):", s11ang, s21ang, s31ang, s41ang)
 
-        self.s11pos, self.s12pos, self.s13pos, self.s14pos = \
-                self.leg1.get_pos_from_radians(s11ang, s12ang, s13ang, s14ang)
-        self.s21pos, self.s22pos, self.s23pos, self.s24pos = \
-                self.leg2.get_pos_from_radians(s21ang, s22ang, s23ang, s24ang)
-        self.s31pos, self.s32pos, self.s33pos, self.s34pos = \
-                self.leg3.get_pos_from_radians(s31ang, s32ang, s33ang, s34ang)
-        self.s41pos, self.s42pos, self.s43pos, self.s44pos = \
-                self.leg4.get_pos_from_radians(s41ang, s42ang, s43ang, s44ang)
+        self.s11pos, self.s12pos, self.s13pos = \
+                self.leg1.get_pos_from_radians(s11ang, s12ang, s13ang)
+        self.s21pos, self.s22pos, self.s23pos = \
+                self.leg2.get_pos_from_radians(s21ang, s22ang, s23ang)
+        self.s31pos, self.s32pos, self.s33pos = \
+                self.leg3.get_pos_from_radians(s31ang, s32ang, s33ang)
+        self.s41pos, self.s42pos, self.s43pos = \
+                self.leg4.get_pos_from_radians(s41ang, s42ang, s43ang)
 
     # Method does a few things depending on whether walking or turning, then invokes rest of IK
     # TODO seems I could split out the calculation of leg length from the calculation of
@@ -583,24 +579,16 @@ class Gaits():
         self.v23 = v23
         self.v34 = v34
 
-        # TODO refactor if we use this. It probably doesn't make sense right now.
-        # To avoid problems with sign of angle being incorrectly handled by v2D_Angle
-        # ... we instead compare a near right angle and later subtract Pi/2 radians
-        v45 = [-1 , 0]
-
-        s2rad, s3rad, s4rad = ((v2d_AngleRadians(self.v12, v23)),
-                               (v2d_AngleRadians(v23, v34)),
-                               (v2d_AngleRadians(v34, v45) - pi/2),)
+        s2rad, s3rad = ((v2d_AngleRadians(self.v12, v23)),
+                        (v2d_AngleRadians(v23, v34)),)
 
         if PRINT_DEBUG_IK and debug == 1:
-            print("_ %f *%f %f %d *%d %d ", v2d_AngleRadians(v23, self.v12),
+            print("_ %f *%f %d *%d ", v2d_AngleRadians(v23, self.v12),
                     v2d_AngleRadians(v23, v34),
-                    v2d_AngleRadians(v34, v45),
                     s2rad,
                     s3rad,
-                    s4rad
                     )
-        return s2rad, s3rad, s4rad
+        return s2rad, s3rad
 
 # For alternate version of v2d_AngleRadians
 #def v2d_Length(vec):

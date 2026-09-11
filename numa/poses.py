@@ -17,43 +17,39 @@ RAD_TO_ANGLE = 180./pi
 def g8Stand(gait, leg_servos):
     a2 = 45
     a3 = -125
-    a4 = 0
 
-    gait.s11pos, gait.s12pos, gait.s13pos, gait.s14pos = \
-            gait.leg1.get_pos_from_angle(0, a2, a3, a4)
-    gait.s21pos, gait.s22pos, gait.s23pos, gait.s24pos = \
-            gait.leg2.get_pos_from_angle(0, a2, a3, a4)
-    gait.s31pos, gait.s32pos, gait.s33pos, gait.s34pos = \
-            gait.leg3.get_pos_from_angle(0, a2, a3, a4)
-    gait.s41pos, gait.s42pos, gait.s43pos, gait.s44pos = \
-            gait.leg4.get_pos_from_angle(0, a2, a3, a4)
+    gait.s11pos, gait.s12pos, gait.s13pos = \
+            gait.leg1.get_pos_from_angle(0, a2, a3)
+    gait.s21pos, gait.s22pos, gait.s23pos = \
+            gait.leg2.get_pos_from_angle(0, a2, a3)
+    gait.s31pos, gait.s32pos, gait.s33pos = \
+            gait.leg3.get_pos_from_angle(0, a2, a3)
+    gait.s41pos, gait.s42pos, gait.s43pos = \
+            gait.leg4.get_pos_from_angle(0, a2, a3)
 
     leg_servos.write_positions(
                (gait.s11pos, gait.s21pos, gait.s31pos, gait.s41pos,
                 gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos))
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos))
     return 1000
 
 # Send standing positions to all servos. BUT don't rotate legs to center position
 def g8FeetDown(gait, leg_servos):
     a2 = 45
     a3 = -125
-    a4 = 0
-    _, gait.s12pos, gait.s13pos, gait.s14pos = \
-            gait.leg1.get_pos_from_angle(0, a2, a3, a4)
-    _, gait.s22pos, gait.s23pos, gait.s24pos = \
-            gait.leg2.get_pos_from_angle(0, a2, a3, a4)
-    _, gait.s32pos, gait.s33pos, gait.s34pos = \
-            gait.leg3.get_pos_from_angle(0, a2, a3, a4)
-    _, gait.s42pos, gait.s43pos, gait.s44pos = \
-            gait.leg4.get_pos_from_angle(0, a2, a3, a4)
+    _, gait.s12pos, gait.s13pos = \
+            gait.leg1.get_pos_from_angle(0, a2, a3)
+    _, gait.s22pos, gait.s23pos = \
+            gait.leg2.get_pos_from_angle(0, a2, a3)
+    _, gait.s32pos, gait.s33pos = \
+            gait.leg3.get_pos_from_angle(0, a2, a3)
+    _, gait.s42pos, gait.s43pos = \
+            gait.leg4.get_pos_from_angle(0, a2, a3)
     # Don't send positions to coax servos (indices 0-3)
     leg_servos.write_positions(
                (gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos),
-               indices=range(4, 16))
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos),
+               indices=range(4, 12))
     return 1000
 
 # Send standing positions to all servos.
@@ -61,22 +57,20 @@ def g8Flop(gait, leg_servos):
     # TODO unused; TODO define updated angles
     a2 = 45
     a3 = -125
-    a4 = 0
     # TODO I didn't change these yet
-    gait.s11pos, gait.s12pos, gait.s13pos, gait.s14pos = \
-            gait.leg1.get_pos_from_angle(0, a2, a3, a4)
-    gait.s21pos, gait.s22pos, gait.s23pos, gait.s24pos = \
-            gait.leg2.get_pos_from_angle(0, a2, a3, a4)
-    gait.s31pos, gait.s32pos, gait.s33pos, gait.s34pos = \
-            gait.leg3.get_pos_from_angle(0, a2, a3, a4)
-    gait.s41pos, gait.s42pos, gait.s43pos, gait.s44pos = \
-            gait.leg4.get_pos_from_angle(0, a2, a3, a4)
+    gait.s11pos, gait.s12pos, gait.s13pos = \
+            gait.leg1.get_pos_from_angle(0, a2, a3)
+    gait.s21pos, gait.s22pos, gait.s23pos = \
+            gait.leg2.get_pos_from_angle(0, a2, a3)
+    gait.s31pos, gait.s32pos, gait.s33pos = \
+            gait.leg3.get_pos_from_angle(0, a2, a3)
+    gait.s41pos, gait.s42pos, gait.s43pos = \
+            gait.leg4.get_pos_from_angle(0, a2, a3)
 
     leg_servos.write_positions(
                (gait.s11pos, gait.s21pos, gait.s31pos, gait.s41pos,
                 gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos))
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos))
     return 1000
 
 # Lower feet to ground regardless of shoulder servo position, then cut torque to prevent overheating
@@ -84,22 +78,20 @@ def g8Crouch(gait, leg_servos):
     # angles are leg angles
     a2 = 90
     a3 = -155
-    a4 = 0
     # Don't send positions to coax servos (indices 0-3)
-    _, gait.s12pos, gait.s13pos, gait.s14pos = \
-            gait.leg1.get_pos_from_angle(0, a2, a3, a4)
-    _, gait.s22pos, gait.s23pos, gait.s24pos = \
-            gait.leg2.get_pos_from_angle(0, a2, a3, a4)
-    _, gait.s32pos, gait.s33pos, gait.s34pos = \
-            gait.leg3.get_pos_from_angle(0, a2, a3, a4)
-    _, gait.s42pos, gait.s43pos, gait.s44pos = \
-            gait.leg4.get_pos_from_angle(0, a2, a3, a4)
+    _, gait.s12pos, gait.s13pos = \
+            gait.leg1.get_pos_from_angle(0, a2, a3)
+    _, gait.s22pos, gait.s23pos = \
+            gait.leg2.get_pos_from_angle(0, a2, a3)
+    _, gait.s32pos, gait.s33pos = \
+            gait.leg3.get_pos_from_angle(0, a2, a3)
+    _, gait.s42pos, gait.s43pos = \
+            gait.leg4.get_pos_from_angle(0, a2, a3)
 
     leg_servos.write_positions(
                (gait.s12pos, gait.s22pos, gait.s32pos, gait.s42pos,
-                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos,
-                gait.s14pos, gait.s24pos, gait.s34pos, gait.s44pos),
-               indices=range(4, 16))
+                gait.s13pos, gait.s23pos, gait.s33pos, gait.s43pos),
+               indices=range(4, 12))
 
     # Let the servos move, then disable torque to femur servos (indices 4-7)
     sleep_ms(400)
@@ -188,7 +180,7 @@ def gen_numa2_legs(leg_servo_types=None):
             }
     leg_model = LegGeom(offsets_dict)
 
-    # leg_geom, s1_sign, s2_sign, s3_sign, s4_sign=None, front_leg=True):
+    # leg_geom, s1_sign, s2_sign, s3_sign, front_leg=True):
     leg1 = LegDef(leg_model, dict(leg_servo_types.get(1, {})),  1, -1,  1)
     leg2 = LegDef(leg_model, dict(leg_servo_types.get(2, {})), -1,  1, -1)
     leg3 = LegDef(leg_model, dict(leg_servo_types.get(3, {})),  1, -1,  1, front_leg=True)
@@ -221,12 +213,10 @@ class LegGeom(object):
         self.aoffset1 = offsets_dict.pop("aoffset1")
         self.aoffset2 = offsets_dict.pop("aoffset2")
         self.aoffset3 = offsets_dict.pop("aoffset3")
-        self.aoffset4 = offsets_dict.pop("aoffset4", 0)
 
         # +1 if servo is on non-moving side of joint, -1 if servo is on moving side.
         self.joint2sign = offsets_dict.pop("joint2sign", 1)
         self.joint3sign = offsets_dict.pop("joint3sign", 1)
-        self.joint4sign = offsets_dict.pop("joint4sign", 1)
 
         # Stance is offset from default 45 degree leg direction. Positive stance puts
         # forward legs more forward and rear legs more rearward
@@ -238,7 +228,7 @@ class LegGeom(object):
         # TODO(enhancement): genericize for other servo types
         self.max_angle = {}
         self.min_angle = {}
-        for n in range(1,5):
+        for n in range(1,4):
             self.max_angle[n] = offsets_dict.pop("max{0}".format(n), 150)
             self.min_angle[n] = offsets_dict.pop("min{0}".format(n), -150)
 
@@ -276,7 +266,7 @@ class LegDef(object):
     accounting for orientation, etc.
     """
 
-    def __init__(self, leg_geom, offsets_dict, s1_sign, s2_sign, s3_sign, s4_sign=1, front_leg=True):
+    def __init__(self, leg_geom, offsets_dict, s1_sign, s2_sign, s3_sign, front_leg=True):
         """
         offsets_dict : dict
             Dictionary with keys 'servoX_type'.
@@ -285,7 +275,6 @@ class LegDef(object):
         self.s1_sign = s1_sign
         self.s2_sign = s2_sign
         self.s3_sign = s3_sign
-        self.s4_sign = s4_sign
 
         # degrees
         a1_stance_offset = self.leg_geom.a1stance if front_leg else self.leg_geom.a1stance_rear
@@ -294,33 +283,26 @@ class LegDef(object):
         _t1 = offsets_dict.pop("servo1_type", "ax12")
         _t2 = offsets_dict.pop("servo2_type", "ax12")
         _t3 = offsets_dict.pop("servo3_type", "ax12")
-        _t4 = offsets_dict.pop("servo4_type", "ax12")
-        self.servo_types = [_t1, _t2, _t3, _t4]
+        self.servo_types = [_t1, _t2, _t3]
         self.pos1 = leg_geom.pos_lookup[_t1]
         self.pos2 = leg_geom.pos_lookup[_t2]
         self.pos3 = leg_geom.pos_lookup[_t3]
-        self.pos4 = leg_geom.pos_lookup[_t4]
         c1 = leg_geom.center_lookup[_t1]
         c2 = leg_geom.center_lookup[_t2]
         c3 = leg_geom.center_lookup[_t3]
-        c4 = leg_geom.center_lookup[_t4]
 
         s1lims = [c1 + self.s1_sign * self.pos1(leg_geom.max_angle[1]), c1 + self.s1_sign * self.pos1(leg_geom.min_angle[1])]
         s2lims = [c2 + self.s2_sign * self.pos2(leg_geom.max_angle[2]), c2 + self.s2_sign * self.pos2(leg_geom.min_angle[2])]
         s3lims = [c3 + self.s3_sign * self.pos3(leg_geom.max_angle[3]), c3 + self.s3_sign * self.pos3(leg_geom.min_angle[3])]
-        s4lims = [c4 + self.s4_sign * self.pos4(leg_geom.max_angle[4]), c4 + self.s4_sign * self.pos4(leg_geom.min_angle[4])]
         s1lims.sort()
         s2lims.sort()
         s3lims.sort()
-        s4lims.sort()
         self.s1min, self.s1max = s1lims
         self.s2min, self.s2max = s2lims
         self.s3min, self.s3max = s3lims
-        self.s4min, self.s4max = s4lims
         self.s1min = self.s1min if self.s1min >= 0 else 0
         self.s2min = self.s2min if self.s2min >= 0 else 0
         self.s3min = self.s3min if self.s3min >= 0 else 0
-        self.s4min = self.s4min if self.s4min >= 0 else 0
 
         # Convert offsets in degrees to servo values
         self.s1_center_angle = self.s1_sign * (leg_geom.aoffset1 + a1_stance_offset)
@@ -328,39 +310,19 @@ class LegDef(object):
         self.s1_center = c1 + self.pos1(self.s1_center_angle)
         self.s2_center = c2 + self.pos2(self.s2_sign * leg_geom.aoffset2)
         self.s3_center = c3 + self.pos3(self.s3_sign * leg_geom.aoffset3)
-        if leg_geom.aoffset4:
-            self.s4_center = c4 + self.pos4(self.s4_sign * leg_geom.aoffset4)
-        else:
-            self.s4_center = c4
 
-    def get_pos_from_angle(self, a1, a2, a3, a4=None):
+    def get_pos_from_angle(self, a1, a2, a3):
         # Angles are in degrees. Returns list of servo positions
-        positions = [
+        return [
                 self.s1_center + self.pos1(a1),  # Remember to supply offset from center, not absolute angle
                 self.s2_center + self.pos2(self.s2_sign * self.leg_geom.joint2sign * a2),
                 self.s3_center + self.pos3(self.s3_sign * self.leg_geom.joint3sign * a3),
         ]
 
-        if a4 and self.s4_sign:
-            positions.append(self.s4_center + self.pos4(
-                self.s4_sign * self.leg_geom.joint4sign * a4))
-        else:
-            positions.append(self.s4_center)
-
-        return positions
-
-    def get_pos_from_radians(self, a1, a2, a3, a4=None):
+    def get_pos_from_radians(self, a1, a2, a3):
         # Current convention is we convert all angles from radians to degrees
-        positions = [
+        return [
                 self.s1_center + self.pos1(RAD_TO_ANGLE * a1),
                 self.s2_center + self.pos2(RAD_TO_ANGLE * self.s2_sign * self.leg_geom.joint2sign * a2),
                 self.s3_center + self.pos3(RAD_TO_ANGLE * self.s3_sign * self.leg_geom.joint3sign * a3),
         ]
-
-        if a4 and self.leg_geom.aoffset4:
-            positions.append(self.s4_center + self.pos4(
-                RAD_TO_ANGLE * self.s4_sign * self.leg_geom.joint4sign * a4))
-        else:
-            positions.append(self.s4_center)
-
-        return positions
