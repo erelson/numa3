@@ -149,9 +149,10 @@ def gen_numa2_legs(leg_servo_types=None):
     """Generate leg geometry and leg definitions for Numa 2/3.
 
     leg_servo_types: optional dict mapping leg number (1-4) to a dict of
-        servo type overrides, e.g.:
-        {1: {'servo1_type': 'hx-35hm'}, 2: {'servo1_type': 'hx-35hm'}}
-        Any unspecified joints default to 'ax12'.
+        per-joint overrides, e.g.:
+        {1: {'servo1_type': 'hx-35hm'}, 4: {'servo2_type': 'hx-35hm',
+                                            'servo2_trim': -95.0}}
+        'servoX_type' defaults to 'ax12'; 'servoX_trim' (signed deg) to 0.0.
     """
     if leg_servo_types is None:
         leg_servo_types = {}
@@ -277,7 +278,8 @@ class LegDef(object):
     def __init__(self, leg_geom, offsets_dict, s1_sign, s2_sign, s3_sign, front_leg=True):
         """
         offsets_dict : dict
-            Dictionary with keys 'servoX_type'.
+            Per-joint config. Optional keys 'servoX_type' (default 'ax12') and
+            'servoX_trim' (signed degrees, default 0.0), for X in 1..3.
         """
         self.leg_geom = leg_geom
         self.s1_sign = s1_sign
@@ -299,6 +301,19 @@ class LegDef(object):
         c1 = leg_geom.center_lookup[_t1]
         c2 = leg_geom.center_lookup[_t2]
         c3 = leg_geom.center_lookup[_t3]
+
+        # Per-unit trim (signed degrees): a mounting/horn offset in the servo's
+        # own frame, applied as an effective-center shift (NOT through the leg or
+        # joint sign). Folding it into c* means BOTH the joint zero (s*_center)
+        # and the range-of-motion limits below move with it. Default 0.0 -> no
+        # change.
+        _tr1 = offsets_dict.pop("servo1_trim", 0.0)
+        _tr2 = offsets_dict.pop("servo2_trim", 0.0)
+        _tr3 = offsets_dict.pop("servo3_trim", 0.0)
+        self.servo_trims = [_tr1, _tr2, _tr3]
+        c1 = c1 + self.pos1(_tr1)
+        c2 = c2 + self.pos2(_tr2)
+        c3 = c3 + self.pos3(_tr3)
 
         # Servo range-of-motion limits
         s1lims = [c1 + self.s1_sign * self.pos1(leg_geom.max_angle[1]), c1 + self.s1_sign * self.pos1(leg_geom.min_angle[1])]
