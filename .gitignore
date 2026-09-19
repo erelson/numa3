@@ -17,3 +17,6 @@ numa2_robot_flash_backup*.py
 # force-add a wanted raster with `git add -f`.
 *.png
 *.gif
+
+# Last-seen PyBoard record (move_via_pyboard.py)
+.pyboard_last_seen.json
