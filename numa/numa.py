@@ -87,6 +87,21 @@ PRINT_DEBUG_LOOP = False
 PAN_CENTER = AX_CENTER + 153
 TILT_CENTER = AX_CENTER + 45
 
+# Turret joystick speed model.
+#   False -> legacy: per-loop position increment is a constant-gain linear
+#            function of stick deflection (no time-based ramp).
+#   True  -> ramped: current rate eases toward a stick-proportional target so
+#            small/brief inputs stay slow and precise, building toward a max.
+# The ramp path is still a stub (see NumaMain._turret_increments_ramp); leave
+# this False until that math is implemented and tuned.
+TURRET_RAMP_ENABLED = False
+# Ramp tuning (used only when TURRET_RAMP_ENABLED). Full-stick max rates roughly
+# match the legacy gains (127/10, 127/40, 127/25). TODO tune on hardware.
+TURRET_PAN_MAX_RATE = 13.0        # counts/loop at full pan stick, normal mode
+TURRET_PAN_MAX_RATE_SLOW = 3.0    # counts/loop at full pan stick, slow mode
+TURRET_TILT_MAX_RATE = 5.0        # counts/loop at full tilt stick
+TURRET_RAMP_ACCEL = 1.0           # max change in rate per loop (accel limit)
+
 LOADER_TIMEOUT_DURATION = 1000000 # microseconds
 LOADER_SPEED_ON = -54  # counterclockwise
 LOADER_SPEED_OFF = 0
@@ -206,6 +221,11 @@ class NumaMain(object):
         self.slowturret = False
         self.pan_pos = PAN_CENTER
         self.tilt_pos = TILT_CENTER
+        # Turret speed model + ramp state (rates are counts/loop; only used when
+        # self.turret_ramp is True).
+        self.turret_ramp = TURRET_RAMP_ENABLED
+        self.pan_rate = 0.0
+        self.tilt_rate = 0.0
 
         # Defaults?
         trav_rate_default = 25 # distance covered by a stride is twice this
@@ -709,21 +729,29 @@ class NumaMain(object):
             self.slowturret = False
             self.laserGPIO.value(0)
 
+        # Predefined-position snaps set the target directly. Reset the affected
+        # ramp rate(s) so ramp mode doesn't carry stale velocity into the next
+        # joystick input (no-op in legacy mode, where the rates stay 0.0).
         if buttonval & BUT_R2:
             self.pan_pos = PAN_CENTER
             self.tilt_pos = TILT_CENTER
+            self.pan_rate = 0.0
+            self.tilt_rate = 0.0
             if PRINT_DEBUG_COMMANDER: out += "lookcenter\t"
 
         if buttonval & BUT_R1:
             self.pan_pos = PAN_CENTER
+            self.pan_rate = 0.0
             if PRINT_DEBUG_COMMANDER: out += "lookfront\t"
         else:
             pass
 
         if buttonval & BUT_LT:
             self.pan_pos = PAN_CENTER + 153  # 45 deg left
+            self.pan_rate = 0.0
         if buttonval & BUT_RT:
             self.pan_pos = PAN_CENTER - 153  # 45 deg right
+            self.pan_rate = 0.0
 
         # If button is pressed (or switch is "on") disable BB Loader
         if buttonval & BUT_L5:# and self.cmdrAlive:
@@ -785,11 +813,7 @@ class NumaMain(object):
         #    self.walkH = 0
 
         # Look joystick is right joystick
-        if self.slowturret:
-            pan_add = int(-self.crx.lookh / 40)
-        else:
-            pan_add = int(-self.crx.lookh / 10)
-        tilt_add = int(-self.crx.lookv / 25)
+        pan_add, tilt_add = self._turret_increments()
 
         self.pan_pos = clamp(self.pan_pos + pan_add, self.servo51Min, self.servo51Max)
         self.tilt_pos = clamp(self.tilt_pos + tilt_add, self.servo52Min, self.servo52Max)
@@ -797,6 +821,48 @@ class NumaMain(object):
         if out:
             print("Output:", out)
         return
+
+
+    def _turret_increments(self):
+        """Per-loop (pan_add, tilt_add) position increments from the look stick.
+
+        Selects the turret speed model via self.turret_ramp: legacy constant-gain
+        vs ramped speed.
+        """
+        if self.turret_ramp:
+            return self._turret_increments_ramp()
+        return self._turret_increments_constant()
+
+    def _turret_increments_constant(self):
+        """Legacy behavior: the per-loop increment is a constant-gain linear
+        function of stick deflection (no time-based ramp). Preserved verbatim."""
+        if self.slowturret:
+            pan_add = int(-self.crx.lookh / 40)
+        else:
+            pan_add = int(-self.crx.lookh / 10)
+        tilt_add = int(-self.crx.lookv / 25)
+        return pan_add, tilt_add
+
+    def _turret_increments_ramp(self):
+        """Non-constant speed: the current rate eases toward a stick-proportional
+        target so small/brief inputs stay slow and precise and build toward a max.
+
+        State: self.pan_rate / self.tilt_rate (float counts/loop), reset to 0 on
+        predefined-position snaps.
+
+        STUB: the accel-limited ramp is not implemented yet. For now the rate
+        snaps to the target (== legacy behavior at full stick), so the flag is
+        safe to flip. TODO(turret ramp): ease self.pan_rate/self.tilt_rate toward
+        the targets by at most TURRET_RAMP_ACCEL per loop instead of snapping.
+        """
+        pan_max = TURRET_PAN_MAX_RATE_SLOW if self.slowturret else TURRET_PAN_MAX_RATE
+        pan_target = -self.crx.lookh / 127.0 * pan_max
+        tilt_target = -self.crx.lookv / 127.0 * TURRET_TILT_MAX_RATE
+        # TODO(turret ramp): replace these snapping assignments with an
+        # accel-limited approach toward the targets (using TURRET_RAMP_ACCEL).
+        self.pan_rate = pan_target
+        self.tilt_rate = tilt_target
+        return int(self.pan_rate), int(self.tilt_rate)
 
 
     def bb_loader_service(self, loopStart, adcval_effort, adcval_loaded):
