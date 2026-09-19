@@ -3,6 +3,16 @@
 """Launch script for running robot code simulation with support for input
 from Arbotix controller and live plotting of both controller input and
 positions generated for servos 
+
+Commander hookup:
+    The Arbotix Commander talks over XBee at 38400 baud (matching the
+    robot-side UART(1, 38400) in numa.py). On the computer, pair an XBee
+    on a USB adapter with the Commander's XBee -- it enumerates as an
+    ordinary serial port, which this script opens directly. There is no
+    radio-specific code here; it just reads bytes.
+
+        Windows:  -p COM6           (the default)
+        Linux:    -p /dev/ttyUSB0
 """
 
 from argparse import ArgumentParser

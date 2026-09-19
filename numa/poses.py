@@ -164,7 +164,7 @@ def gen_numa2_legs(leg_servo_types=None):
             "a1stance_rear": -10,  # degrees
             "L0": 130, # mm; aka legLen
             "L12": 58,
-            "L23": 65, #63,
+            "L23": 61, # 61 is with HW/AX servo combo on Numa3; #65, #63,
             "L34": 130, #67,
             "L45": 5,  # This isn't used in numa2's case
             # mins/max are in degrees from actual servo center (not joint center!)
