@@ -145,17 +145,35 @@ def g8Crouch(gait, leg_servos):
 #
 #      |________legLen__aka L0___|
 
-def gen_numa2_legs(leg_servo_types=None):
+def gen_numa2_legs(leg_servo_types=None, leg_servo_trims=None):
     """Generate leg geometry and leg definitions for Numa 2/3.
 
-    leg_servo_types: optional dict mapping leg number (1-4) to a dict of
-        per-joint overrides, e.g.:
-        {1: {'servo1_type': 'hx-35hm'}, 4: {'servo2_type': 'hx-35hm',
-                                            'servo2_trim': -95.0}}
-        'servoX_type' defaults to 'ax12'; 'servoX_trim' (signed deg) to 0.0.
+    leg_servo_types: optional flat dict {joint_id: kind}, joint_id being the
+        <leg><joint> id used elsewhere (e.g. 12 = leg 1 femur). kind is a
+        pos/center_lookup key such as 'ax12' or 'hx-35hm'. Unlisted joints
+        default to 'ax12'.
+    leg_servo_trims: optional flat dict {joint_id: trim_deg} (signed degrees),
+        the per-unit mounting/horn offset. Unlisted joints default to 0.0.
+
+    These map directly onto servo_inventory.leg_servo_types() /
+    leg_servo_trims().
     """
     if leg_servo_types is None:
         leg_servo_types = {}
+    if leg_servo_trims is None:
+        leg_servo_trims = {}
+
+    def _leg_overrides(leg_num):
+        # Translate the flat {joint_id: ...} maps into LegDef's per-leg dict of
+        # 'servoX_type'/'servoX_trim' keys for X in 1..3.
+        d = {}
+        for joint in (1, 2, 3):
+            jid = leg_num * 10 + joint
+            if jid in leg_servo_types:
+                d["servo{0}_type".format(joint)] = leg_servo_types[jid]
+            if jid in leg_servo_trims:
+                d["servo{0}_trim".format(joint)] = leg_servo_trims[jid]
+        return d
 # 4\ __^__ /3
 #   |     |
 #   |numa2|
@@ -189,10 +207,10 @@ def gen_numa2_legs(leg_servo_types=None):
     leg_model = LegGeom(offsets_dict)
 
     # leg_geom, s1_sign, s2_sign, s3_sign, front_leg=True):
-    leg1 = LegDef(leg_model, dict(leg_servo_types.get(1, {})),  1, -1,  1)
-    leg2 = LegDef(leg_model, dict(leg_servo_types.get(2, {})), -1,  1, -1)
-    leg3 = LegDef(leg_model, dict(leg_servo_types.get(3, {})),  1, -1,  1, front_leg=True)
-    leg4 = LegDef(leg_model, dict(leg_servo_types.get(4, {})), -1,  1, -1, front_leg=True)
+    leg1 = LegDef(leg_model, _leg_overrides(1),  1, -1,  1)
+    leg2 = LegDef(leg_model, _leg_overrides(2), -1,  1, -1)
+    leg3 = LegDef(leg_model, _leg_overrides(3),  1, -1,  1, front_leg=True)
+    leg4 = LegDef(leg_model, _leg_overrides(4), -1,  1, -1, front_leg=True)
 
     return leg_model, leg1, leg2, leg3, leg4
 

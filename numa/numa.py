@@ -59,6 +59,7 @@ from commander import CommanderRx
 from servo_group import Servo, ServoGroup
 from poses import gen_numa2_legs, g8Stand, g8FeetDown, g8Crouch, AX_CENTER
 from IK import Gaits
+import servo_inventory
 
 
 #PROG_LOOP_TIME = 19500 # in microseconds
@@ -874,10 +875,16 @@ class NumaMain(object):
             print(cnt, x)
 
 def main():
-    # To use HiWonder servos on specific joints, pass leg_servo_types, e.g.:
-    #   leg_servo_types = {1: {'servo1_type': 'hx-35hm'}, 2: {'servo1_type': 'hx-35hm'}}
-    leg_servo_types = {}
-    leg_geom, leg1, leg2, leg3, leg4 = gen_numa2_legs(leg_servo_types)
+    # Servo types and per-unit trims come from the physical inventory.
+    leg_servo_types = servo_inventory.leg_servo_types()
+    leg_servo_trims = servo_inventory.leg_servo_trims()
+    # TEMPORARY (steps 4-6): force the femurs to AX-12 so behavior matches the
+    # all-AX baseline while the HiWonder bracket geometry is not yet defined.
+    # Remove this block at step 7 to enable the HiWonder femurs.
+    for femur in (12, 22, 32, 42):
+        leg_servo_types[femur] = 'ax12'
+        leg_servo_trims[femur] = 0.0
+    leg_geom, leg1, leg2, leg3, leg4 = gen_numa2_legs(leg_servo_types, leg_servo_trims)
     gaits = Gaits(leg_geom, leg1, leg2, leg3, leg4)
     x = NumaMain(gaits)
     # Safety...
