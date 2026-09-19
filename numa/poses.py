@@ -17,6 +17,30 @@ RAD_TO_ANGLE = 180./pi
 AX_CENTER = 512
 HX35HM_CENTER = 750
 
+# Per-(role, servo type) bracket geometry. A joint's resting angle offset (deg),
+# travel limits (deg from the servo's electrical center, sign per s*_sign), and
+# motion direction depend on the mounting bracket, which changes with the servo
+# type. AX-12 entries are the values Numa2/3 has used to date. The HiWonder femur
+# entry is a placeholder equal to the AX femur until the real bracket is measured
+# (integration plan step 6); it is unused while the femurs are forced to AX.
+ROLE_COAX, ROLE_FEMUR, ROLE_TIBIA = "coax", "femur", "tibia"
+_JOINT_ROLE = {1: ROLE_COAX, 2: ROLE_FEMUR, 3: ROLE_TIBIA}
+
+BRACKET_GEOM = {
+    (ROLE_COAX,  "ax12"):    {"aoffset": 45.0,         "min": -10,  "max": 95,  "jointsign": 1},
+    (ROLE_FEMUR, "ax12"):    {"aoffset": 31.54,        "min": -68,  "max": 100, "jointsign": -1},
+    (ROLE_TIBIA, "ax12"):    {"aoffset": 31.54 - 5.63, "min": -140, "max": 10,  "jointsign": 1},  # off_b - off_h
+    (ROLE_FEMUR, "hx-35hm"): {"aoffset": 31.54,        "min": -68,  "max": 100, "jointsign": -1},  # placeholder == AX
+}
+
+
+def bracket_geom(role, kind):
+    """Bracket geometry dict for a joint role and servo kind.
+    'ax12a' shares the 'ax12' bracket."""
+    if kind == "ax12a":
+        kind = "ax12"
+    return BRACKET_GEOM[(role, kind)]
+
 # NOTE: All g8 pose functions should return a wait time in ms
 
 # Send neutral standing positions to all servos.
@@ -180,29 +204,16 @@ def gen_numa2_legs(leg_servo_types=None, leg_servo_trims=None):
 #   |_____|
 # 1/       \2
     stance = 5  # degrees; see README
+    # Shared geometry (not per servo type). Per-(role, type) aoffset, travel
+    # limits, and joint direction live in module-level BRACKET_GEOM instead.
     offsets_dict = {
-            # Offsets are in degrees
-            "aoffset1": 45.0,  # this one is special; see also a1_stance_offset
-            "aoffset2": 31.54,
-            "aoffset3": 31.54 - 5.63, # off_b - off_h
-            "a1stance": stance,
-            "a1stance_rear": -10,  # degrees
+            "a1stance": stance,        # degrees
+            "a1stance_rear": -10,      # degrees
             "L0": 130, # mm; aka legLen
             "L12": 58,
             "L23": 61, # 61 is with HW/AX servo combo on Numa3; #65, #63,
             "L34": 130, #67,
             "L45": 5,  # This isn't used in numa2's case
-            # mins/max are in degrees from actual servo center (not joint center!)
-            # TODO these might need to be different depending on servo type, due to mounting bracket differences
-            "max1": 95,
-            "min1": -10,
-            "max2": 100,
-            "min2": -68,
-            "max3": 10, #90,
-            "min3": -140, #-20,
-            #
-            "joint2sign": -1,
-            "joint3sign": 1,
             }
     leg_model = LegGeom(offsets_dict)
 
@@ -235,28 +246,15 @@ class LegGeom(object):
         self.L34 = offsets_dict.pop("L34")
         self.L45 = offsets_dict.pop("L45")
 
-        # Offsets are specified in degrees
-        self.aoffset1 = offsets_dict.pop("aoffset1")
-        self.aoffset2 = offsets_dict.pop("aoffset2")
-        self.aoffset3 = offsets_dict.pop("aoffset3")
-
-        # +1 if servo is on non-moving side of joint, -1 if servo is on moving side.
-        self.joint2sign = offsets_dict.pop("joint2sign", 1)
-        self.joint3sign = offsets_dict.pop("joint3sign", 1)
-
         # Stance is offset from default 45 degree leg direction. Positive stance puts
         # forward legs more forward and rear legs more rearward
         self.a1stance = offsets_dict.pop("a1stance")
         # Optional rear stance lets front legs and back legs have separate stance angle
         self.a1stance_rear = offsets_dict.pop("a1stance_rear", self.a1stance)
 
-        # Joint max/min angles
-        # TODO(enhancement): genericize for other servo types
-        self.max_angle = {}
-        self.min_angle = {}
-        for n in range(1,4):
-            self.max_angle[n] = offsets_dict.pop("max{0}".format(n), 150)
-            self.min_angle[n] = offsets_dict.pop("min{0}".format(n), -150)
+        # Per-joint resting offset (aoffset), travel limits, and joint direction
+        # are per (role, servo type) -- see module-level BRACKET_GEOM, consulted
+        # by LegDef.
 
         self.pos_lookup = {"ax12": self.ax12pos,
                            "ax12a": self.ax12pos,
@@ -333,10 +331,19 @@ class LegDef(object):
         c2 = c2 + self.pos2(_tr2)
         c3 = c3 + self.pos3(_tr3)
 
+        # Bracket geometry per (joint role, servo type): resting aoffset, travel
+        # limits, and motion direction. Coax has no separate joint sign (its
+        # direction is carried by s1_sign), so b1["jointsign"] is unused.
+        b1 = bracket_geom(ROLE_COAX, _t1)
+        b2 = bracket_geom(ROLE_FEMUR, _t2)
+        b3 = bracket_geom(ROLE_TIBIA, _t3)
+        self.joint2sign = b2["jointsign"]
+        self.joint3sign = b3["jointsign"]
+
         # Servo range-of-motion limits
-        s1lims = [c1 + self.s1_sign * self.pos1(leg_geom.max_angle[1]), c1 + self.s1_sign * self.pos1(leg_geom.min_angle[1])]
-        s2lims = [c2 + self.s2_sign * self.pos2(leg_geom.max_angle[2]), c2 + self.s2_sign * self.pos2(leg_geom.min_angle[2])]
-        s3lims = [c3 + self.s3_sign * self.pos3(leg_geom.max_angle[3]), c3 + self.s3_sign * self.pos3(leg_geom.min_angle[3])]
+        s1lims = [c1 + self.s1_sign * self.pos1(b1["max"]), c1 + self.s1_sign * self.pos1(b1["min"])]
+        s2lims = [c2 + self.s2_sign * self.pos2(b2["max"]), c2 + self.s2_sign * self.pos2(b2["min"])]
+        s3lims = [c3 + self.s3_sign * self.pos3(b3["max"]), c3 + self.s3_sign * self.pos3(b3["min"])]
         s1lims.sort()
         s2lims.sort()
         s3lims.sort()
@@ -348,24 +355,24 @@ class LegDef(object):
         self.s3min = self.s3min if self.s3min >= 0 else 0
 
         # Convert offsets in degrees to servo values
-        self.s1_center_angle = self.s1_sign * (leg_geom.aoffset1 + a1_stance_offset)
+        self.s1_center_angle = self.s1_sign * (b1["aoffset"] + a1_stance_offset)
         self.s1_center_radians = self.s1_center_angle / RAD_TO_ANGLE
         self.s1_center = c1 + self.pos1(self.s1_center_angle)
-        self.s2_center = c2 + self.pos2(self.s2_sign * leg_geom.aoffset2)
-        self.s3_center = c3 + self.pos3(self.s3_sign * leg_geom.aoffset3)
+        self.s2_center = c2 + self.pos2(self.s2_sign * b2["aoffset"])
+        self.s3_center = c3 + self.pos3(self.s3_sign * b3["aoffset"])
 
     def get_pos_from_angle(self, a1, a2, a3):
         # Angles are in degrees. Returns list of servo positions
         return [
                 self.s1_center + self.pos1(a1),  # Remember to supply offset from center, not absolute angle
-                self.s2_center + self.pos2(self.s2_sign * self.leg_geom.joint2sign * a2),
-                self.s3_center + self.pos3(self.s3_sign * self.leg_geom.joint3sign * a3),
+                self.s2_center + self.pos2(self.s2_sign * self.joint2sign * a2),
+                self.s3_center + self.pos3(self.s3_sign * self.joint3sign * a3),
         ]
 
     def get_pos_from_radians(self, a1, a2, a3):
         # Current convention is we convert all angles from radians to degrees
         return [
                 self.s1_center + self.pos1(RAD_TO_ANGLE * a1),
-                self.s2_center + self.pos2(RAD_TO_ANGLE * self.s2_sign * self.leg_geom.joint2sign * a2),
-                self.s3_center + self.pos3(RAD_TO_ANGLE * self.s3_sign * self.leg_geom.joint3sign * a3),
+                self.s2_center + self.pos2(RAD_TO_ANGLE * self.s2_sign * self.joint2sign * a2),
+                self.s3_center + self.pos3(RAD_TO_ANGLE * self.s3_sign * self.joint3sign * a3),
         ]
