@@ -11,6 +11,12 @@ elif sysname == 'pyboard':
 
 RAD_TO_ANGLE = 180./pi
 
+# Servo center positions (counts), the single source of truth for "straight".
+# AX-12/AX-12A: 1023-count range -> center 512 (~511.5). HiWonder HX-35HM:
+# 1500-count range -> center 750. Imported by init.py/numa.py for the turret.
+AX_CENTER = 512
+HX35HM_CENTER = 750
+
 # NOTE: All g8 pose functions should return a wait time in ms
 
 # Send neutral standing positions to all servos.
@@ -157,7 +163,7 @@ def gen_numa2_legs(leg_servo_types=None):
     stance = 5  # degrees; see README
     offsets_dict = {
             # Offsets are in degrees
-            "aoffset1": 45.0,  # this one is special
+            "aoffset1": 45.0,  # this one is special; see also a1_stance_offset
             "aoffset2": 31.54,
             "aoffset3": 31.54 - 5.63, # off_b - off_h
             "a1stance": stance,
@@ -168,6 +174,7 @@ def gen_numa2_legs(leg_servo_types=None):
             "L34": 130, #67,
             "L45": 5,  # This isn't used in numa2's case
             # mins/max are in degrees from actual servo center (not joint center!)
+            # TODO these might need to be different depending on servo type, due to mounting bracket differences
             "max1": 95,
             "min1": -10,
             "max2": 100,
@@ -236,9 +243,10 @@ class LegGeom(object):
                            "ax12a": self.ax12pos,
                            "hx-35hm": self.hx35hmpos,
         }
-        self.center_lookup = {"ax12": 512,
-                              "ax12a": 512,
-                              "hx-35hm": 750,
+        # Simple center values (position) for servo types
+        self.center_lookup = {"ax12": AX_CENTER,
+                              "ax12a": AX_CENTER,
+                              "hx-35hm": HX35HM_CENTER,
         }
 
     def ax12pos(self, angle):
@@ -287,10 +295,12 @@ class LegDef(object):
         self.pos1 = leg_geom.pos_lookup[_t1]
         self.pos2 = leg_geom.pos_lookup[_t2]
         self.pos3 = leg_geom.pos_lookup[_t3]
+        # Servo center positions
         c1 = leg_geom.center_lookup[_t1]
         c2 = leg_geom.center_lookup[_t2]
         c3 = leg_geom.center_lookup[_t3]
 
+        # Servo range-of-motion limits
         s1lims = [c1 + self.s1_sign * self.pos1(leg_geom.max_angle[1]), c1 + self.s1_sign * self.pos1(leg_geom.min_angle[1])]
         s2lims = [c2 + self.s2_sign * self.pos2(leg_geom.max_angle[2]), c2 + self.s2_sign * self.pos2(leg_geom.min_angle[2])]
         s3lims = [c3 + self.s3_sign * self.pos3(leg_geom.max_angle[3]), c3 + self.s3_sign * self.pos3(leg_geom.min_angle[3])]

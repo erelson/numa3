@@ -9,6 +9,7 @@ elif sysname == 'pyboard':
     from utime import sleep_ms
 
 import ax
+from poses import AX_CENTER
 
 
 # See WalkingOmni.nb
@@ -18,7 +19,7 @@ import ax
 
 # Servo position limits, range from 0 to 1023
 # From AX12 manual: CW Angle Limit <= Goal Position <= CCW
-PAN_CENTER = 511 + 153
+PAN_CENTER = AX_CENTER + 153
 
 
 def initServoLims(leg_servos, axbus, turret_ids, gaits):
@@ -31,7 +32,7 @@ def initServoLims(leg_servos, axbus, turret_ids, gaits):
     ]
     turret_lims = [
         [PAN_CENTER - 4 * (52+30), PAN_CENTER + 4 * (52+30)],  # 51
-        [511 - 4 * 31,             511 + 4 * 65],               # 52
+        [AX_CENTER - 4 * 31,       AX_CENTER + 4 * 65],         # 52
     ]
     leg_servos.write_angle_limits(leg_lims)
     sleep_ms(25)

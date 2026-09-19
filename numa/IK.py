@@ -148,7 +148,7 @@ class Gaits():
                  #L34=defaultL34,
                  #L45=defaultL45,
                  leg_geom,
-                 leg1, leg2, leg3, leg4,
+                 leg1, leg2, leg3, leg4,  # LegDef instances
                  bodyH=defaultbodyH,  # Leave this one open to being dynamic
                 ):
         self.L0 = leg_geom.L0
@@ -173,19 +173,12 @@ class Gaits():
         self.leg3 = leg3
         self.leg4 = leg4
 
-        # TODO safe initial values?
-        self.s11pos = 511
-        self.s21pos = 511
-        self.s31pos = 511
-        self.s41pos = 511
-        self.s12pos = 511
-        self.s22pos = 511
-        self.s32pos = 511
-        self.s42pos = 511
-        self.s13pos = 0
-        self.s23pos = 0
-        self.s33pos = 0
-        self.s43pos = 0
+        # Safe initial values: each joint's center (type-correct via LegDef),
+        # overwritten on the first walk/turn/pose cycle.
+        self.s11pos, self.s12pos, self.s13pos = leg1.s1_center, leg1.s2_center, leg1.s3_center
+        self.s21pos, self.s22pos, self.s23pos = leg2.s1_center, leg2.s2_center, leg2.s3_center
+        self.s31pos, self.s32pos, self.s33pos = leg3.s1_center, leg3.s2_center, leg3.s3_center
+        self.s41pos, self.s42pos, self.s43pos = leg4.s1_center, leg4.s2_center, leg4.s3_center
 
         self.initTrig()
 

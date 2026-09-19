@@ -57,7 +57,7 @@ from helpers import clamp, speedPhaseFix
 from init import myServoReturnLevels, myServoSpeeds, initServoLims
 from commander import CommanderRx
 from servo_group import Servo, ServoGroup
-from poses import gen_numa2_legs, g8Stand, g8FeetDown, g8Crouch
+from poses import gen_numa2_legs, g8Stand, g8FeetDown, g8Crouch, AX_CENTER
 from IK import Gaits
 
 
@@ -83,8 +83,8 @@ PRINT_DEBUG_COMMANDER = 0
 PRINT_DEBUG_LOOP = False
 
 # +153 is 45 deg offset for pan servo's mounting scheme.
-PAN_CENTER = 511 + 153
-TILT_CENTER = 511 + 45
+PAN_CENTER = AX_CENTER + 153
+TILT_CENTER = AX_CENTER + 45
 
 LOADER_TIMEOUT_DURATION = 1000000 # microseconds
 LOADER_SPEED_ON = -54  # counterclockwise
@@ -163,7 +163,7 @@ class NumaMain(object):
         ])
 
         self.servo51Min, self.servo51Max = PAN_CENTER - 4 * (52+30),  PAN_CENTER + 4 * (52+30)
-        self.servo52Min, self.servo52Max = 511 - 4 * 31,              511 + 4 * 65
+        self.servo52Min, self.servo52Max = AX_CENTER - 4 * 31,        AX_CENTER + 4 * 65
         self.servo52Min, self.servo52Max = 390, 700
 
         self.crouchCnt = 0 # Counter incremented by button presses, eventually disabling leg servos
