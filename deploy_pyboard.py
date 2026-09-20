@@ -42,6 +42,7 @@ SOURCES = [
     "numa/ax.py",
     "numa/MotorDriver.py",
     "numa/servo_group.py",
+    "numa/servo_inventory.py",
     "hiwonder/hiwonder_bus.py",
     "hiwonder/hiwonder_packet.py",
     # bioloid3 submodule (github.com/erelson/bioloid3, branch erelson_fixes_1)
@@ -155,7 +156,22 @@ def board_read_file(board_path):
     return out.stdout.replace('\r\n', '\n')
 
 
-def write_to_board(changed, dest):
+def board_file_sizes(dest, names):
+    """{basename: size_in_bytes} for the given names that exist on the board."""
+    listing = mpremote_exec(
+        "import os\n"
+        "for f in %r:\n"
+        "    try: print(f, os.stat('%s/' + f)[6])\n"
+        "    except Exception: pass\n" % (list(names), dest))
+    sizes = {}
+    for line in listing.splitlines():
+        parts = line.strip().rsplit(None, 1)
+        if len(parts) == 2 and parts[1].isdigit():
+            sizes[parts[0]] = int(parts[1])
+    return sizes
+
+
+def write_to_board(changed, staged, dest):
     board_id, name = board_identity()
     if name is None:
         sys.exit("Unknown board ID %s - aborting. Add it to BOARD_IDS if this "
@@ -164,11 +180,38 @@ def write_to_board(changed, dest):
 
     free = int(mpremote_exec(
         "import os; st = os.statvfs('%s'); print(st[0]*st[3])" % dest).strip())
-    need = sum(blocks(os.stat(f).st_size) * BLOCK_SIZE for f in changed)
-    print("Board %s free: %d bytes; upload needs up to %d bytes" % (dest, free, need))
-    if need > free:
-        sys.exit("Not enough free space (writes would truncate silently). "
-                 "Free up flash or deploy fewer files.")
+
+    # Replacing a file frees its old blocks before the new content is written,
+    # so the space actually required is the GROWTH, not the full payload. Sum
+    # only the positive per-file deltas: that is the worst case regardless of
+    # the order rshell writes them in (all growing files first).
+    on_board = board_file_sizes(dest, [os.path.basename(f) for f in changed])
+    growth = net = 0
+    for f in changed:
+        base = os.path.basename(f)
+        new_b = blocks(os.stat(f).st_size)
+        old_b = blocks(on_board[base]) if base in on_board else 0
+        growth += max(0, new_b - old_b) * BLOCK_SIZE
+        net += (new_b - old_b) * BLOCK_SIZE
+    print("Board %s free: %d bytes" % (dest, free))
+    print("Upload: %d bytes of new blocks, %+d bytes net after reclaiming "
+          "replaced files" % (growth, net))
+    if growth > free:
+        sys.exit("Not enough free space: needs %d bytes of new blocks but only "
+                 "%d free (writes would truncate silently). Free up flash or "
+                 "deploy fewer files." % (growth, free))
+
+    # Change detection compares staged output to the PREVIOUS staging run, not
+    # to the board, so a file already staged but absent from the board is not
+    # marked changed. Flag that rather than silently shipping an incomplete set.
+    absent = [os.path.basename(f) for f in staged if f not in changed]
+    if absent:
+        missing = [b for b in absent
+                   if b not in board_file_sizes(dest, absent)]
+        if missing:
+            print("WARNING: not in this upload and missing from the board: %s"
+                  % ", ".join(sorted(missing)))
+            print("         re-run with --force to push the full payload.")
 
     rshell_dest = "/pyboard" + dest + "/"
     cmd = ["rshell", "-p", DEVICE, "cp"] + changed + [rshell_dest]
@@ -216,7 +259,7 @@ def main():
     if not changed:
         print("\nNothing changed; nothing to write.")
         return
-    write_to_board(changed, args.dest)
+    write_to_board(changed, staged, args.dest)
 
 
 if __name__ == "__main__":
