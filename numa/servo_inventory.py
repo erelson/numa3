@@ -53,14 +53,14 @@ PHYSICAL_SERVOS = [
     {"label": "AX43", "kind": KIND_AX12, "trim_deg": 0.0, "notes": ""},
     {"label": "AX51", "kind": KIND_AX12, "trim_deg": 0.0, "notes": "turret"},
     {"label": "AX52", "kind": KIND_AX12, "trim_deg": 0.0, "notes": "turret"},
-    # 4x HiWonder HX-35HM
-    {"label": "HW12", "kind": KIND_HX35HM, "trim_deg": 0.0, # TODO
+    # 4x HiWonder HX-35HM - The servo horns don't cleanly go on, so horn's bolt holes aren't "square" with 0 position.
+    {"label": "HW12", "kind": KIND_HX35HM, "trim_deg": 4.08,  # Recorded 4.08
      "notes": "id 12"},
-    {"label": "HW22", "kind": KIND_HX35HM, "trim_deg": 0.0, # TODO
+    {"label": "HW22", "kind": KIND_HX35HM, "trim_deg": 5.15,  # Recorded 4.8, 5.52, 5.04
      "notes": "id 22"},
-    {"label": "HW32", "kind": KIND_HX35HM, "trim_deg": 0.0, # TODO
+    {"label": "HW32", "kind": KIND_HX35HM, "trim_deg": 1.92,  # Recorded 1.92
      "notes": "id 32"},
-    {"label": "HW42", "kind": KIND_HX35HM, "trim_deg": -95.0,  # Special case, servo horn wasn't centered properly I think; 9-16-2026...:
+    {"label": "HW42", "kind": KIND_HX35HM, "trim_deg": 29.04,  # Special case until I redo the horn?
      "notes": "id 42"},
 ]
 

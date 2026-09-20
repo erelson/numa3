@@ -30,7 +30,7 @@ BRACKET_GEOM = {
     (ROLE_COAX,  "ax12"):    {"aoffset": 45.0,         "min": -10,  "max": 95,  "jointsign": 1},
     (ROLE_FEMUR, "ax12"):    {"aoffset": 31.54,        "min": -68,  "max": 100, "jointsign": -1},
     (ROLE_TIBIA, "ax12"):    {"aoffset": 31.54 - 5.63, "min": -140, "max": 10,  "jointsign": 1},  # off_b - off_h
-    (ROLE_FEMUR, "hx-35hm"): {"aoffset": 31.54,        "min": -68,  "max": 100, "jointsign": -1},  # placeholder == AX
+    (ROLE_FEMUR, "hx-35hm"): {"aoffset": 0.0,        "min": -90,  "max": 75, "jointsign": -1},  # partiall tested at least
 }
 
 
@@ -106,7 +106,7 @@ def g8Flop(gait, leg_servos):
 # Lower feet to ground regardless of shoulder servo position, then cut torque to prevent overheating
 def g8Crouch(gait, leg_servos):
     # angles are leg angles
-    a2 = 90
+    a2 = 85  # changed for HW servos; used to be 90 with AX servos
     a3 = -155
     # Don't send positions to coax servos (indices 0-3)
     _, gait.s12pos, gait.s13pos = \
@@ -217,6 +217,9 @@ def gen_numa2_legs(leg_servo_types=None, leg_servo_trims=None):
             }
     leg_model = LegGeom(offsets_dict)
 
+    # Per servo joint signs? what about "legsign"?
+    # Given how I alternated the below due to how I assembled the legs in the past,
+    # I could possibly have defined a single "legsign" per leg, and adjusted the sign of the second angle elsewhere.
     # leg_geom, s1_sign, s2_sign, s3_sign, front_leg=True):
     leg1 = LegDef(leg_model, _leg_overrides(1),  1, -1,  1)
     leg2 = LegDef(leg_model, _leg_overrides(2), -1,  1, -1)

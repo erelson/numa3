@@ -32,11 +32,17 @@ def test_joint_kind():
         assert inv.joint_kind(other) == inv.KIND_AX12, other
 
 
-def test_joint_trim():
-    assert inv.joint_trim(42) == -95.0
-    for j in (12, 22, 32):
-        assert inv.joint_trim(j) == 0.0, j
-    assert inv.joint_trim(11) == 0.0
+def test_joint_trim_resolves_through_tables():
+    # Deliberately does NOT pin trim values: those are calibration data and are
+    # expected to change. What matters is that the lookup resolves correctly
+    # through JOINT_ASSIGNMENTS -> PHYSICAL_SERVOS, and that the values are
+    # plausible degrees (a trim entered in counts would blow the range check).
+    by_label = {s["label"]: s for s in inv.PHYSICAL_SERVOS}
+    for joint_id, label in inv.JOINT_ASSIGNMENTS.items():
+        trim = inv.joint_trim(joint_id)
+        assert trim == by_label[label]["trim_deg"], (joint_id, label)
+        assert isinstance(trim, float), (joint_id, trim)
+        assert -180.0 < trim < 180.0, (joint_id, trim)
 
 
 def test_joint_bus_id():
@@ -52,7 +58,11 @@ def test_leg_servo_maps():
     assert set(trims) == expected_joints, set(trims)
     assert 51 not in types and 52 not in types, "turret must be excluded"
     assert types[12] == inv.KIND_HX35HM and types[11] == inv.KIND_AX12
-    assert trims[42] == -95.0 and trims[13] == 0.0
+    # Values themselves are calibration data; just check the map agrees with
+    # the per-joint accessors it is built from.
+    for joint_id in expected_joints:
+        assert trims[joint_id] == inv.joint_trim(joint_id), joint_id
+        assert types[joint_id] == inv.joint_kind(joint_id), joint_id
 
 
 def main():
