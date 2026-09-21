@@ -317,6 +317,9 @@ else:
     print('torque:   {}'.format(bus.read(SID, ax.TORQUE_ENABLE, 1)[0]))
     print('speed:    {}  (0 means MAX)'.format(struct.unpack('<H', bus.read(SID, ax.MOVING_SPEED, 2))[0]))
     print('temp:     {} C'.format(bus.read(SID, ax.PRESENT_TEMP, 1)[0]))
+    # addr 42 = PRESENT_VOLTAGE (0.1 V units). Literal, not ax.PRESENT_VOLTAGE:
+    # the constant is new in numa/ax.py and the board's copy may predate it.
+    print('voltage:  {:.1f} V'.format(bus.read(SID, 42, 1)[0] / 10.0))
     print('rtn_lvl:  {}  (1 = writes unacknowledged, project default)'.format(
           bus.read(SID, ax.RETURN_LEVEL, 1)[0]))
 """
