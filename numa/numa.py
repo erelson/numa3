@@ -968,7 +968,56 @@ class NumaMain(object):
                         self.gaits.s42pos, self.gaits.s43pos]):
             print(cnt, x)
 
+CRASH_LOG = '/flash/crash.txt' if sysname == 'pyboard' else 'crash.txt'
+CRASH_LOG_MAX = 2048  # flash is tight; start a fresh file past this
+
+
+def log_crash(exc):
+    """Append a traceback to CRASH_LOG.
+
+    On battery power nothing is watching the USB serial, so a startup failure
+    otherwise leaves no trace at all. Never raises: a problem writing the log
+    must not mask the original exception.
+    """
+    try:
+        import sys as _sys
+        mode = 'a'
+        try:
+            import os as _os
+            if _os.stat(CRASH_LOG)[6] > CRASH_LOG_MAX:
+                mode = 'w'
+        except Exception:
+            pass  # no existing log, or no stat; append/create
+        f = open(CRASH_LOG, mode)
+        try:
+            f.write('---- crash ----\n')
+            try:
+                f.write('at ticks_us %d\n' % ticks_us())
+            except Exception:
+                pass
+            if hasattr(_sys, 'print_exception'):
+                _sys.print_exception(exc, f)          # MicroPython
+            else:
+                import traceback
+                traceback.print_exception(type(exc), exc, exc.__traceback__,
+                                          file=f)     # CPython
+            f.write('\n')
+        finally:
+            f.close()
+    except Exception:
+        pass
+
+
 def main():
+    """Entry point; logs any failure to CRASH_LOG before re-raising."""
+    try:
+        _run_robot()
+    except BaseException as e:
+        log_crash(e)
+        raise
+
+
+def _run_robot():
     # Servo types and per-unit trims come from the physical inventory.
     leg_servo_types = servo_inventory.leg_servo_types()
     leg_servo_trims = servo_inventory.leg_servo_trims()
