@@ -87,6 +87,18 @@ PRINT_DEBUG_LOOP = False
 PAN_CENTER = AX_CENTER + 153
 TILT_CENTER = AX_CENTER + 45
 
+# HiWonder femur update cadence during gaits. Each HiWonder position command is
+# its own ~1.1 ms MOVE_TIME_WRITE (the protocol has no sync-write), so writing
+# four of them every loop would cost ~4.5 ms of a 12 ms loop. Instead write them
+# every GAIT_HW_EVERY loops with a matching travel time: MOVE_TIME_WRITE
+# interpolates internally, so the servo tracks smoothly between updates. AX
+# servos are one batched sync_write and are always written every loop.
+# Set GAIT_HW_EVERY = 1 for full-rate updates (fine when only one or two
+# HiWonder servos are installed, and removes cadence as a variable when
+# comparing an HW leg against an AX leg).
+GAIT_HW_EVERY = 1
+GAIT_MOVE_MS = GAIT_HW_EVERY * PROG_LOOP_TIME // 1000  # travel time to match
+
 # Turret joystick speed model.
 #   False -> legacy: per-loop position increment is a constant-gain linear
 #            function of stick deflection (no time-based ramp).
@@ -229,6 +241,9 @@ class NumaMain(object):
         self.turret_ramp = TURRET_RAMP_ENABLED
         self.pan_rate = 0.0
         self.tilt_rate = 0.0
+        # Counts gait writes so HiWonder servos are updated every GAIT_HW_EVERY
+        # passes (see the constant); 0 means "write them this pass".
+        self.hw_write_phase = 0
 
         # Defaults?
         trav_rate_default = 25 # distance covered by a stride is twice this
@@ -301,10 +316,14 @@ class NumaMain(object):
 
         myServoReturnLevels(self.leg_servos, self.axbus, self.turret_ids)
         print("ServoReturnLevelsSet!")
-        initServoLims(self.leg_servos, self.axbus, self.turret_ids, self.gaits)
-        print("ServoLimsSet!")
+        # Speeds BEFORE limits: initServoLims() is what enables torque, and an
+        # AX MOVING_SPEED of 0 (the power-on default) means MAXIMUM speed. Doing
+        # it the other way round makes the first torque-on snap every leg to the
+        # g8Stand pose at full speed.
         myServoSpeeds(self.leg_servos, self.axbus, self.turret_ids)
         print("ServoSpeedsSet!")
+        initServoLims(self.leg_servos, self.axbus, self.turret_ids, self.gaits)
+        print("ServoLimsSet!")
 
         # Setting mathy initial values for walking
         self.loopLength = 1800 # ms
@@ -953,12 +972,6 @@ def main():
     # Servo types and per-unit trims come from the physical inventory.
     leg_servo_types = servo_inventory.leg_servo_types()
     leg_servo_trims = servo_inventory.leg_servo_trims()
-    # TEMPORARY (steps 4-6): force the femurs to AX-12 so behavior matches the
-    # all-AX baseline while the HiWonder bracket geometry is not yet defined.
-    # Remove this block at step 7 to enable the HiWonder femurs.
-    for femur in (12, 22, 32, 42):
-        leg_servo_types[femur] = 'ax12'
-        leg_servo_trims[femur] = 0.0
     leg_geom, leg1, leg2, leg3, leg4 = gen_numa2_legs(leg_servo_types, leg_servo_trims)
     gaits = Gaits(leg_geom, leg1, leg2, leg3, leg4)
     x = NumaMain(gaits)
