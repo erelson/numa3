@@ -56,7 +56,7 @@ import ax
 from helpers import clamp, speedPhaseFix
 from init import myServoReturnLevels, myServoSpeeds, initServoLims
 from commander import CommanderRx
-from servo_group import Servo, ServoGroup
+from servo_group import Servo, ServoGroup, protocol_for, PROTOCOL_HW
 from poses import gen_numa2_legs, g8Stand, g8FeetDown, g8Crouch, AX_CENTER
 from IK import Gaits
 import servo_inventory
@@ -171,7 +171,10 @@ class NumaMain(object):
                 _type_map[leg_num * 10 + joint_num] = kind
 
         def _bus_for(kind):
-            return self.hw_bus if kind.startswith('hx') else self.axbus
+            # Same mapping ServoGroup dispatches on, so the bus a servo is put
+            # on can never disagree with the protocol used to talk to it.
+            return (self.hw_bus if protocol_for(kind) == PROTOCOL_HW
+                    else self.axbus)
 
         self.leg_servos = ServoGroup([
             Servo(sid, _type_map[sid], _bus_for(_type_map[sid]))
@@ -581,10 +584,16 @@ class NumaMain(object):
         # Move all servos
         try:
             if self.walk == True or self.turn_loops > 0:
+                # AX servos go out every pass as one sync_write; HiWonder
+                # servos every GAIT_HW_EVERY passes, with GAIT_MOVE_MS of
+                # travel time so the servo interpolates across the gap.
+                self.hw_write_phase = (self.hw_write_phase + 1) % GAIT_HW_EVERY
                 self.leg_servos.write_positions(
                            (self.gaits.s11pos, self.gaits.s21pos, self.gaits.s31pos, self.gaits.s41pos,
                             self.gaits.s12pos, self.gaits.s22pos, self.gaits.s32pos, self.gaits.s42pos,
-                            self.gaits.s13pos, self.gaits.s23pos, self.gaits.s33pos, self.gaits.s43pos))
+                            self.gaits.s13pos, self.gaits.s23pos, self.gaits.s33pos, self.gaits.s43pos),
+                           move_ms=GAIT_MOVE_MS,
+                           include_hw=(self.hw_write_phase == 0))
                 #print("Coax positions:",self.gaits.s11pos, self.gaits.s21pos, self.gaits.s31pos, self.gaits.s41pos)
                 #print("Femur positions:",self.gaits.s12pos, self.gaits.s22pos, self.gaits.s32pos, self.gaits.s42pos)
                 #print("Tibia positions:",self.gaits.s13pos, self.gaits.s23pos, self.gaits.s33pos, self.gaits.s43pos)
