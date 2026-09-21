@@ -32,6 +32,7 @@ Joint mode (-j/-J):
 
 Buses (see numa/numa.py):
     HiWonder  HX-35HM  UART 4 @ 115200   center 750, 4.1667 counts/deg (0-1500)
+              (--uart N overrides the HiWonder UART for bench wiring tests.)
     Dynamixel AX-12    UART 2 @ 1000000  center 512, 3.4133 counts/deg (0-1023)
 
 Counts-per-degree match hx35hmpos() / ax12pos() in numa/poses.py so that
@@ -198,7 +199,7 @@ SID = %(sid)d
 POS = %(pos)d
 REQ_MS = %(ms)d
 RELEASE = %(release)d
-bus = Bus(UART_Port(4, 115200))
+bus = Bus(UART_Port(%(uart)d, 115200))
 if not bus.ping(SID):
     print('ERROR: no HiWonder servo answering id', SID)
 else:
@@ -286,7 +287,7 @@ from hiwonder_bus import Bus, BusError
 import hiwonder_packet as pkt
 import struct
 SID = %(sid)d
-bus = Bus(UART_Port(4, 115200))
+bus = Bus(UART_Port(%(uart)d, 115200))
 if not bus.ping(SID):
     print('ERROR: no HiWonder servo answering id', SID)
 else:
@@ -330,7 +331,7 @@ from hiwonder_bus import Bus, BusError
 import hiwonder_packet as pkt
 import struct, utime
 SID = %(sid)d
-bus = Bus(UART_Port(4, 115200))
+bus = Bus(UART_Port(%(uart)d, 115200))
 if not bus.ping(SID):
     print('ERROR: no HiWonder servo answering id', SID)
 else:
@@ -425,6 +426,9 @@ def main():
                     help="HiWonder travel time in ms (default: counts*5, ~48 deg/s)")
     ap.add_argument("--speed", type=int, default=200, metavar="N",
                     help="AX MOVING_SPEED, 1-1023 (default 200, ~133 deg/s; 0 means MAX)")
+    ap.add_argument("--uart", type=int, default=BUSES["hw"][0], metavar="N",
+                    help="UART for the HiWonder bus (default: %(default)s). "
+                         "Ignored for AX, which is UART 2.")
     ap.add_argument("-d", "--device", metavar="DEV",
                     help="serial device (default: first /dev/ttyACM*)")
     ap.add_argument("--flag-file", default=DEFAULT_FLAG_FILE, metavar="PATH",
@@ -523,6 +527,8 @@ def main():
     if args.release and pos is not None:
         how += ", then release"
     label = "{} servo {}".format(bus, sid)
+    if bus == "hw" and args.uart != BUSES["hw"][0]:
+        label += " (UART {})".format(args.uart)
     if args.joint is not None:
         label = "joint {} ({})".format(args.joint, label)
     print("target: {} -> {}".format(label, how))
@@ -553,7 +559,8 @@ def main():
 
     if args.read:
         # Reads are harmless on any board, so no confirmation prompt.
-        code = (HW_READ_CODE if bus == "hw" else AX_READ_CODE) % {"sid": sid}
+        code = (HW_READ_CODE if bus == "hw" else AX_READ_CODE) % {
+            "sid": sid, "uart": args.uart}
         rc, out = run_remote(device, code, timeout=60)
         if out:
             print(out)
@@ -580,9 +587,11 @@ def main():
             return 1
 
     if pos is None:
-        code = (HW_RELEASE_CODE if bus == "hw" else AX_RELEASE_CODE) % {"sid": sid}
+        code = (HW_RELEASE_CODE if bus == "hw" else AX_RELEASE_CODE) % {
+            "sid": sid, "uart": args.uart}
     elif bus == "hw":
-        code = HW_CODE % {"sid": sid, "pos": pos, "ms": max(0, args.time),
+        code = HW_CODE % {"sid": sid, "uart": args.uart, "pos": pos,
+                          "ms": max(0, args.time),
                           "release": int(args.release)}
     else:
         code = AX_CODE % {"sid": sid, "pos": pos,
