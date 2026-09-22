@@ -128,6 +128,34 @@ def test_response_rejects_bad_checksum():
         assert False, "bad checksum should have raised"
 
 
+def test_sts_control_table():
+    # Addresses corroborated by the protocol manual's examples, FEETECH's
+    # STS3215 spec sheet, and matthieuvigne/STS_servos.
+    R = ft.Register
+    assert (R.ID, R.BAUD_RATE, R.RESPONSE_STATUS_LEVEL) == (5, 6, 8)
+    assert (R.MIN_ANGLE_LIMIT, R.MAX_ANGLE_LIMIT) == (9, 11)
+    assert (R.TORQUE_ENABLE, R.GOAL_POSITION, R.GOAL_TIME, R.GOAL_SPEED) == \
+        (40, 42, 44, 46)
+    assert (R.LOCK, R.PRESENT_POSITION) == (55, 56)
+    # The manual's 6-byte goal block and 8-byte present block must be contiguous
+    assert R.GOAL_TIME == R.GOAL_POSITION + 2
+    assert R.GOAL_SPEED == R.GOAL_TIME + 2
+    assert (R.PRESENT_SPEED, R.PRESENT_LOAD) == (58, 60)
+    assert (R.PRESENT_VOLTAGE, R.PRESENT_TEMPERATURE) == (62, 63)
+    # example 8 read 8 bytes from PRESENT_POSITION and got exactly this span
+    assert R.PRESENT_TEMPERATURE - R.PRESENT_POSITION + 1 == 8
+
+
+def test_sts_position_scale():
+    # Datasheet 7-6..7-8: 2048 = 180 deg, 360 deg over 4096, 0.088 deg/count
+    assert ft.POSITION_RESOLUTION == 4096
+    assert ft.POSITION_CENTER == 2048
+    assert abs(ft.DEGREES_PER_COUNT - 0.088) < 0.0005
+    assert ft.POSITION_CENTER * ft.DEGREES_PER_COUNT == 180.0
+    # 12-bit magnetic encoder series -> low byte first
+    assert ft.STS_BYTE_ORDER == ft.BYTE_ORDER_LOW_FIRST
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:

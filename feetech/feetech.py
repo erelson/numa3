@@ -51,16 +51,86 @@ class Instruction:
 
 
 class Register:
-    """Register addresses the manual's examples document.
+    """STS3215 / STS3235 control table.
 
-    These are the only addresses the protocol manual pins down; the rest of the
-    control table is model-specific. Do not guess the others -- read them from
-    the model's memory table.
+    Cross-checked against three independent sources that agree exactly:
+      * the protocol manual in this repo (ID 0x05, the 6-byte goal block at
+        0x2A, and the 8-byte present block at 0x38 in its worked examples),
+      * FEETECH's STS3215 product specification (version A/0, 2020-04-10),
+      * the STSServoDriver.h register list in matthieuvigne/STS_servos.
+
+    The manual's example 8 reads 8 bytes from 0x38 and gets position, speed,
+    load, voltage and temperature -- which lines up byte-for-byte with
+    PRESENT_POSITION(56) .. PRESENT_TEMPERATURE(63) below.
+
+    STS3215 and STS3235 share this table and the same 4096-count/360-degree
+    scale; they differ mechanically (case, torque), not in protocol.
     """
-    ID = 0x05                 # example 3: write 1 to address 5 sets the id
-    GOAL_POSITION = 0x2A      # example 4/7: 6-byte block = position, time, speed
-    PRESENT_POSITION = 0x38   # example 2/8: 8-byte block = position, speed,
-                              #              load, voltage, temperature
+    # --- EEPROM (persists across power cycles; LOCK guards writes) ---
+    FIRMWARE_MAJOR = 0
+    FIRMWARE_MINOR = 1
+    SERVO_MAJOR = 3
+    SERVO_MINOR = 4
+    ID = 5
+    BAUD_RATE = 6
+    RESPONSE_DELAY = 7
+    RESPONSE_STATUS_LEVEL = 8   # when the servo replies. Same encoding as the
+                                # AX RETURN_LEVEL register (0 = never, 1 = reply
+                                # to reads only, 2 = reply to everything)
+    MIN_ANGLE_LIMIT = 9         # 2 bytes
+    MAX_ANGLE_LIMIT = 11        # 2 bytes
+    MAX_TEMPERATURE = 13
+    MAX_VOLTAGE = 14
+    MIN_VOLTAGE = 15
+    MAX_TORQUE = 16             # 2 bytes
+    UNLOADING_CONDITION = 19
+    LED_ALARM_CONDITION = 20
+    POS_P_GAIN = 21
+    POS_D_GAIN = 22
+    POS_I_GAIN = 23
+    MIN_STARTUP_FORCE = 24      # 2 bytes
+    CW_DEAD_BAND = 26
+    CCW_DEAD_BAND = 27
+    PROTECTION_CURRENT = 28     # 2 bytes
+    ANGULAR_RESOLUTION = 30
+    POSITION_CORRECTION = 31    # 2 bytes
+    OPERATION_MODE = 33         # 0 = position servo mode (what the legs want)
+    PROTECTION_TORQUE = 34
+    PROTECTION_TIME = 35
+    OVERLOAD_TORQUE = 36
+    SPEED_P_GAIN = 37
+    OVERCURRENT_TIME = 38
+    SPEED_I_GAIN = 39
+
+    # --- RAM (resets on power-up) ---
+    TORQUE_ENABLE = 40          # writing 128 here runs the centering function
+    TARGET_ACCELERATION = 41
+    GOAL_POSITION = 42          # 2 bytes; start of the 6-byte goal block
+    GOAL_TIME = 44              # 2 bytes
+    GOAL_SPEED = 46             # 2 bytes
+    TORQUE_LIMIT = 48           # 2 bytes
+    LOCK = 55                   # EEPROM write protection
+    PRESENT_POSITION = 56       # 2 bytes; start of the 8-byte present block
+    PRESENT_SPEED = 58          # 2 bytes
+    PRESENT_LOAD = 60           # 2 bytes
+    PRESENT_VOLTAGE = 62
+    PRESENT_TEMPERATURE = 63
+    ASYNC_WRITE_FLAG = 64
+    STATUS = 65
+    MOVING = 66
+    PRESENT_CURRENT = 69        # 2 bytes
+
+
+# --- STS3215 / STS3235 position scale ---
+# Datasheet 7-6..7-9: neutral 2048 = 180 deg, 360 deg over 0..4096, resolution
+# 0.088 deg/count, clockwise as the count rises. 12-bit magnetic encoder, so
+# this is the "magnetic encoder series" -> two-byte values are LOW BYTE FIRST
+# (manual section 1.0), same as Dynamixel.
+POSITION_RESOLUTION = 4096
+POSITION_CENTER = 2048
+POSITION_DEGREES = 360.0
+DEGREES_PER_COUNT = POSITION_DEGREES / POSITION_RESOLUTION  # 0.087890625
+STS_BYTE_ORDER = BYTE_ORDER_LOW_FIRST
 
 
 def checksum(body):
