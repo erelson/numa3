@@ -10,6 +10,7 @@ elif sysname == 'pyboard':
 
 import ax
 from poses import AX_CENTER
+from servo_group import RETURN_LEVEL_READ_ONLY
 
 
 # See WalkingOmni.nb
@@ -57,7 +58,10 @@ def myServoSpeeds(leg_servos, axbus, turret_ids):
                      [struct.pack('<H', TURRET_SERVO_SPEED) for _ in turret_ids])
 
 
-RTN_LVL = 1
+# Reply to reads only, so writes are never acknowledged. Applied to every leg
+# servo that has the register: AX (RETURN_LEVEL) and Feetech
+# (RESPONSE_STATUS_LEVEL) share this encoding; HiWonder is fixed here already.
+RTN_LVL = RETURN_LEVEL_READ_ONLY
 def myServoReturnLevels(leg_servos, axbus, turret_ids):
     leg_servos.write_return_level(RTN_LVL)
     axbus.sync_write(turret_ids, ax.RETURN_LEVEL,

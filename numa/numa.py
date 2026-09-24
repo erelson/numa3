@@ -56,7 +56,8 @@ import ax
 from helpers import clamp, speedPhaseFix
 from init import myServoReturnLevels, myServoSpeeds, initServoLims
 from commander import CommanderRx
-from servo_group import Servo, ServoGroup, protocol_for, PROTOCOL_HW
+from servo_group import (Servo, ServoGroup, protocol_for,
+                         PROTOCOL_AX, PROTOCOL_HW, PROTOCOL_FT)
 from poses import gen_numa2_legs, g8Stand, g8FeetDown, g8Crouch, AX_CENTER
 from IK import Gaits
 import servo_inventory
@@ -182,11 +183,26 @@ class NumaMain(object):
             for joint_num, kind in enumerate(leg_def.servo_types, 1):
                 _type_map[leg_num * 10 + joint_num] = kind
 
+        # Which physical bus each protocol lives on. Keyed by the same protocol
+        # ServoGroup dispatches on, so a servo's bus can never disagree with the
+        # protocol used to talk to it. Feetech shares the Dynamixel wire: the
+        # framing is identical and both default to 1 Mbaud, so they only need
+        # non-colliding ids (and a matching response level -- see
+        # ServoGroup.write_return_level).
+        _protocol_bus = {
+            PROTOCOL_AX: self.axbus,
+            PROTOCOL_FT: self.axbus,
+            PROTOCOL_HW: self.hw_bus,
+        }
+
         def _bus_for(kind):
-            # Same mapping ServoGroup dispatches on, so the bus a servo is put
-            # on can never disagree with the protocol used to talk to it.
-            return (self.hw_bus if protocol_for(kind) == PROTOCOL_HW
-                    else self.axbus)
+            protocol = protocol_for(kind)
+            try:
+                return _protocol_bus[protocol]
+            except KeyError:
+                raise ValueError(
+                    "no bus configured for protocol {!r} (servo kind {!r})"
+                    .format(protocol, kind))
 
         self.leg_servos = ServoGroup([
             Servo(sid, _type_map[sid], _bus_for(_type_map[sid]))
