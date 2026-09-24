@@ -16,6 +16,9 @@ RAD_TO_ANGLE = 180./pi
 # 1500-count range -> center 750. Imported by init.py/numa.py for the turret.
 AX_CENTER = 512
 HX35HM_CENTER = 750
+# Feetech STS3215 / STS3235: 12-bit magnetic encoder, 0..4095 over 360 deg,
+# neutral 2048 = 180 deg (datasheet 7-6..7-8). Same for both models.
+STS_CENTER = 2048
 
 # Per-(role, servo type) bracket geometry. A joint's resting angle offset (deg),
 # travel limits (deg from the servo's electrical center, sign per s*_sign), and
@@ -39,7 +42,17 @@ def bracket_geom(role, kind):
     'ax12a' shares the 'ax12' bracket."""
     if kind == "ax12a":
         kind = "ax12"
-    return BRACKET_GEOM[(role, kind)]
+    try:
+        return BRACKET_GEOM[(role, kind)]
+    except KeyError:
+        # A servo kind can be registered in pos_lookup/center_lookup (so the
+        # protocol and scale are known) while its bracket has not been measured
+        # yet -- e.g. the Feetech STS parts. Say so instead of raising a bare
+        # KeyError from deep inside LegDef.
+        raise KeyError(
+            "no bracket geometry for role {!r} with servo kind {!r}; measure "
+            "the aoffset/min/max/jointsign for that mounting and add it to "
+            "poses.BRACKET_GEOM".format(role, kind))
 
 # NOTE: All g8 pose functions should return a wait time in ms
 
@@ -262,11 +275,15 @@ class LegGeom(object):
         self.pos_lookup = {"ax12": self.ax12pos,
                            "ax12a": self.ax12pos,
                            "hx-35hm": self.hx35hmpos,
+                           "sts3215": self.stspos,
+                           "sts3235": self.stspos,
         }
         # Simple center values (position) for servo types
         self.center_lookup = {"ax12": AX_CENTER,
                               "ax12a": AX_CENTER,
                               "hx-35hm": HX35HM_CENTER,
+                              "sts3215": STS_CENTER,
+                              "sts3235": STS_CENTER,
         }
 
     def ax12pos(self, angle):
@@ -286,6 +303,16 @@ class LegGeom(object):
         Note: Generally combined with an offset representing the servo's center position
         """
         return int(angle/180.0 * 750)  # Degrees -> servo position (360 deg = 1500 positions)
+
+    def stspos(self, angle):
+        """Return an angle converted from degrees into integer position values.
+
+        Feetech STS3215 / STS3235: 12-bit magnetic encoder, 0..4095 spanning
+        360 degrees, so 2048 counts per 180 degrees (0.088 deg/count).
+
+        Note: Generally combined with an offset representing the servo's center position
+        """
+        return int(angle/180.0 * 2048)  # Degrees -> servo position (360 deg = 4096 positions)
 
 
 class LegDef(object):

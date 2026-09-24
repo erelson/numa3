@@ -128,7 +128,7 @@ class ServoGroup:
                 ax_ids.append(servo.id)
                 ax_vals.append(struct.pack('<H', p))
             elif servo.protocol == PROTOCOL_FT:
-                # STS is little-endian like AX
+                # STS is little-endian like AX (12-bit magnetic encoder series)
                 ft_ids.append(servo.id)
                 ft_vals.append(struct.pack('<H', p))
             elif servo.protocol == PROTOCOL_HW:

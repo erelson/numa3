@@ -80,6 +80,31 @@ def test_legdef_uses_bracket_direction():
     assert l1.joint3sign == poses.bracket_geom("tibia", "ax12")["jointsign"]
 
 
+def test_sts_position_scale_registered():
+    # STS3215/STS3235: 2048 counts per 180 deg (0..4095 over 360 deg)
+    lg, _, _, _, _ = poses.gen_numa2_legs()
+    for kind in ("sts3215", "sts3235"):
+        assert lg.center_lookup[kind] == poses.STS_CENTER == 2048
+        pos = lg.pos_lookup[kind]
+        assert pos(0) == 0
+        assert pos(180) == 2048
+        assert pos(-180) == -2048
+        assert pos(90) == 1024
+        # 0.088 deg per count, per the datasheet
+        assert abs(180.0 / 2048 - 0.088) < 0.0005
+
+
+def test_sts_bracket_not_yet_measured_fails_clearly():
+    # The kind is registered (protocol + scale known) but no bracket has been
+    # measured, so this must explain itself rather than raise a bare KeyError.
+    try:
+        poses.bracket_geom("femur", "sts3215")
+    except KeyError as exc:
+        assert "BRACKET_GEOM" in str(exc), exc
+    else:
+        assert False, "unmeasured bracket should have raised"
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for t in tests:
