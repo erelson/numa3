@@ -11,5 +11,5 @@ Notes on files/folders:
 
 # See also
 For systemd services:
-- system/opi/
-- system/rpi/
+- ../system/opi/
+- ../system/rpi/
